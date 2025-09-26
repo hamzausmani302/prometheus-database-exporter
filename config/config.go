@@ -1,0 +1,121 @@
+package config
+
+import (
+	"fmt"
+	"log"
+	"os"
+	"path"
+
+	"github.com/sirupsen/logrus"
+
+	"gopkg.in/yaml.v3"
+)
+
+/*
+Contains all the configuration settings for the application and exporter.
+Defines structs for Store, Collector, DataSource and main Application config.
+Also defines enums for DataSourceType and CollectorType.
+*/
+var logger *logrus.Logger
+// Enums for DataSourceType and CollectorType
+type DataSourceType string
+// Enums for DataSourceType and CollectorType
+type CollectorType string
+
+
+
+const (
+	// Enum mapping for DataSourceType
+	SQL DataSourceType = "SQL"
+	// Enum mapping for CollectorType
+	Prometheus CollectorType = "Prometheus"
+)
+
+/*
+Configuration structs for the Store.
+*/
+type StoreConfig struct {
+	// Type of the store enum (InMemory, Redis)
+	StoreType string `yaml:"type"`
+	// Metadata for the store (Specifying connection details)
+	Metadata map[string]map[string]string `yaml:"metadata"`
+}
+
+/*
+Configuration structs for the Collector.
+*/
+type CollectorConfig struct {
+	// Type of collector enum (Prometheus)
+	CollectType CollectorType `yaml:"type"`
+	// Metadata for the collector (Specifying additional details)
+	// Makes it easy to implement new features without chaning the config much
+	Metadata map[string]string `yaml:"metadata"`
+}
+
+/*
+Configuration structs for the DataSource.
+*/
+type DataSourceMetadataConfig struct {
+	// Connection details for the datasource (host, port, username, password, dbname etc)
+	ConnectionDetails map[string]string `yaml:"connection_details"`
+}
+
+/*
+Configuration structs for the DataSource.
+*/
+type DataSourceConfig struct {
+	// Name of the datasource (e.g. Postgres, MySQL), will be used in metrics
+	Name string `yaml:"name"`
+	// Type of the datasource enum (SQL)
+	DataSourceType DataSourceType `yaml:"type"`
+	// Metadata for the datasource (Specifying connection details)
+	Metadata DataSourceMetadataConfig `yaml:"metadata"`
+}
+
+/*
+Main configuration struct for the application.
+Containing all the sub-configurations.
+*/
+type ApplicationConfig struct {
+	// Configuration for the Store
+	Store StoreConfig `yaml:"storeConfig"`
+	// Configuration for the Collector
+	Collector CollectorConfig `yaml:"collectorConfig"`
+	// Configuration for the DataSource
+	DataSource []DataSourceConfig `yaml:"dataSourceConfig"`
+	// Queries to be executed to fetch metrics
+	Queries []map[string]interface{} `yaml:"queries"`
+}
+
+func readConfigData(data []byte, out *ApplicationConfig) {
+	err := yaml.Unmarshal(data, &out)
+	if err != nil {
+		log.Fatalf("Error unmarshaling YAML: %v", err)
+	}
+} 
+// Function to read the config file based on the environment (dev, prod etc)
+func readFileConfig(env string) *ApplicationConfig {
+	var applicationConfig ApplicationConfig;
+
+	logger = logrus.New()
+	logger.SetLevel(logrus.DebugLevel)
+	configFilePath := path.Join("config", fmt.Sprintf("config.%s.yaml", env))
+	logger.Infof("Reading config file: %s", configFilePath)
+	// Read the config file
+	
+	content, err := os.ReadFile(configFilePath)
+	if err != nil {
+		logger.Fatalf("Error reading file: %v", err)
+		panic("There is a problem reading the file...")
+	}
+	readConfigData(content, &applicationConfig)
+	return &applicationConfig
+}
+
+var cfg *ApplicationConfig;
+func GetConfig(env string) ApplicationConfig {
+	if cfg == nil {
+		cfg = readFileConfig(env)
+	} 
+	return *cfg
+}
