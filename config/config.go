@@ -16,7 +16,6 @@ Contains all the configuration settings for the application and exporter.
 Defines structs for Store, Collector, DataSource and main Application config.
 Also defines enums for DataSourceType and CollectorType.
 */
-var logger *logrus.Logger
 // Enums for DataSourceType and CollectorType
 type DataSourceType string
 // Enums for DataSourceType and CollectorType
@@ -31,6 +30,10 @@ const (
 	Prometheus CollectorType = "Prometheus"
 )
 
+
+type StoreConfigMetadataConfig struct{
+	ConnectionDetails map[string]string `yaml:"connectionDetails"`
+}
 /*
 Configuration structs for the Store.
 */
@@ -38,7 +41,7 @@ type StoreConfig struct {
 	// Type of the store enum (InMemory, Redis)
 	StoreType string `yaml:"type"`
 	// Metadata for the store (Specifying connection details)
-	Metadata map[string]map[string]string `yaml:"metadata"`
+	Metadata StoreConfigMetadataConfig `yaml:"metadata"`
 }
 
 /*
@@ -57,7 +60,7 @@ Configuration structs for the DataSource.
 */
 type DataSourceMetadataConfig struct {
 	// Connection details for the datasource (host, port, username, password, dbname etc)
-	ConnectionDetails map[string]string `yaml:"connection_details"`
+	ConnectionDetails map[string]string `yaml:"connectionDetails"`
 }
 
 /*
@@ -87,35 +90,31 @@ type ApplicationConfig struct {
 	Queries []map[string]interface{} `yaml:"queries"`
 }
 
-func readConfigData(data []byte, out *ApplicationConfig) {
-	err := yaml.Unmarshal(data, &out)
+func (cfg *ApplicationConfig) readConfigData(data []byte) {
+	err := yaml.Unmarshal(data, &cfg)
 	if err != nil {
 		log.Fatalf("Error unmarshaling YAML: %v", err)
 	}
 } 
-// Function to read the config file based on the environment (dev, prod etc)
-func readFileConfig(env string) *ApplicationConfig {
-	var applicationConfig ApplicationConfig;
 
-	logger = logrus.New()
-	logger.SetLevel(logrus.DebugLevel)
-	configFilePath := path.Join("config", fmt.Sprintf("config.%s.yaml", env))
-	logger.Infof("Reading config file: %s", configFilePath)
+
+var appCfg *ApplicationConfig;
+func GetConfig(env string, logger *logrus.Logger) ApplicationConfig {
+	var applicationConfig ApplicationConfig;
+	if appCfg == nil {
+		logger.SetLevel(logrus.DebugLevel)
+		configFilePath := path.Join("config", fmt.Sprintf("config.%s.yaml", env))
+		logger.Infof("Reading config file: %s ", configFilePath)
 	// Read the config file
 	
-	content, err := os.ReadFile(configFilePath)
-	if err != nil {
-		logger.Fatalf("Error reading file: %v", err)
-		panic("There is a problem reading the file...")
-	}
-	readConfigData(content, &applicationConfig)
-	return &applicationConfig
-}
-
-var cfg *ApplicationConfig;
-func GetConfig(env string) ApplicationConfig {
-	if cfg == nil {
-		cfg = readFileConfig(env)
+		content, err := os.ReadFile(configFilePath)
+		if err != nil {
+			logger.Fatalf("Error reading file: %v", err)
+			panic("There is a problem reading the file...")
+		}
+		applicationConfig.readConfigData(content)
+		// fmt.Println(applicationConfig)
+		appCfg = &applicationConfig
 	} 
-	return *cfg
+	return *appCfg
 }

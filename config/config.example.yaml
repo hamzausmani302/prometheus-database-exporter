@@ -1,7 +1,10 @@
 storeConfig:
-  type: local # enum [Local, Redis] can add more implementations later by implemnting the DataStore interface
+  type: redis # enum [Local, Redis] can add more implementations later by implemnting the DataStore interface
   metadata:
-    connectionDetails: {}
+    connectionDetails:
+      host: localhost
+      port: 6379
+      password: TiyNzDdjvY
 collectorConfig:
   type: prometheus # enum [Prometheus] can add more implementations later by implemnting the ICollector interface
   metadata: {}
@@ -9,8 +12,17 @@ serverConfig:
   port: 8080
   numWorkers: 5
 dataSourceConfig:
+  - name: postgres-datastore
+    type: SQL # enum [MySQL, PostgreSQL] can add more implementations later by implemnting the IDataSource interface
+    metadata:
+      connectionDetails:
+        host: localhost
+        port: 5432
+        username: postgres
+        password: password
+        connectionString: "postgresql://postgres:password@localhost:5432/id3_dashboard?sslmode=disable"
   - name: mysql-datastore
-    type: mysql # enum [MySQL, PostgreSQL] can add more implementations later by implemnting the IDataSource interface
+    type: SQL # enum [MySQL, PostgreSQL] can add more implementations later by implemnting the IDataSource interface
     metadata:
       connectionDetails:
         host: localhost
