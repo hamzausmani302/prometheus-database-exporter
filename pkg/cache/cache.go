@@ -40,7 +40,6 @@ func (ltc *LocalTimeCache) Set(key string, data []byte, expiresIn int64) error{
 	now := time.Now()
 	
 	ltc.TtlLookup[key] = now.UnixMilli() + (expiresIn * 1000)
-	
 	return nil
 }
 // Create an instance of 

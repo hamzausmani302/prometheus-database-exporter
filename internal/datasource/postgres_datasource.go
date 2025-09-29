@@ -73,7 +73,6 @@ func NewPostgresDatasource(logger *logrus.Logger, configuration *config.Applicat
 	}
 	logger.Info(reader, dataSourceConfig.Metadata.ConnectionDetails)
 	ds := PostgresDataSource{logger: logger, cfg: configuration, dataSourceconfig: dataSourceConfig, Reader: &reader }
-	
 	ds.Connect()
 	return &ds
 }

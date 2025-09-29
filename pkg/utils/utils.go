@@ -6,7 +6,7 @@ import (
 	"github.com/go-gota/gota/dataframe"
 )
 
-func FataFrameToCSVBytes(df dataframe.DataFrame) ([]byte, error) {
+func DataFrameToCSVBytes(df dataframe.DataFrame) ([]byte, error) {
 	buf := &bytes.Buffer{}
 	if err := df.WriteCSV(buf); err != nil {
 		return nil, err
