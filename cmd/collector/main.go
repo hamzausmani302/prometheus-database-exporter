@@ -6,7 +6,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/algorythma/go-scheduler/storage"
 	"github.com/hamzausmani302/prometheus-database-exporter/config"
 
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/datasource"
@@ -52,15 +51,11 @@ func main() {
 	queries := schema.LoadMany(logger, cfg.Queries, dataSourceMap)
 	cacheStore := factories.NewCacheStoreFactory(logger, &cfg).Create(cfg.Store)
 	// fmt.Println(q)
-	// Creating schduler(Inject dependencies)
-	storage := storage.NewSqlite3Storage(storage.Sqlite3Config{
-		DbName: "test1",
-	})
-	if cerr := storage.Connect(); cerr != nil {
-		logger.Warn("Unable to connect to sqlite3 store")
-	}
-	if err := storage.Initialize(); err != nil {
-		logger.Fatal("Could not intialize database", err)
+	// Creating scheduler(Inject dependencies)
+	storage, storageErr := factories.NewSchdulerStorageFactory(logger, &cfg).Create(cfg.Scheduler)
+	if storageErr != nil {
+		logger.Panic(storageErr)
+		return;
 	}
 	sch := scheduler.New(storage)
 	queryscheduler := queryscheduler.NewQuerySchduler(logger, &cfg, &sch, queries, &cacheStore,  &done )

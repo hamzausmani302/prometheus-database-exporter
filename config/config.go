@@ -20,6 +20,8 @@ Also defines enums for DataSourceType and CollectorType.
 type DataSourceType string
 // Enums for DataSourceType and CollectorType
 type CollectorType string
+// Enums for Schedulertype
+type SchedulerType string
 
 
 
@@ -28,12 +30,24 @@ const (
 	SQL DataSourceType = "SQL"
 	// Enum mapping for CollectorType
 	Prometheus CollectorType = "Prometheus"
+	// enum mapping for SchedulerType
+	Memory SchedulerType = "memory"
+	Sqlite SchedulerType = "sqlite"
+
 )
 
-
-type StoreConfigMetadataConfig struct{
+/*
+configuration for the task schduler
+*/
+type SchedulerConfig struct {
+	Storage SchedulerType `yaml:"storage"`
+	Metadata SchedulerMetadataConfig `yaml:"metadata"`
+}
+type SchedulerMetadataConfig struct{
 	ConnectionDetails map[string]string `yaml:"connectionDetails"`
 }
+
+
 /*
 Configuration structs for the Store.
 */
@@ -42,6 +56,9 @@ type StoreConfig struct {
 	StoreType string `yaml:"type"`
 	// Metadata for the store (Specifying connection details)
 	Metadata StoreConfigMetadataConfig `yaml:"metadata"`
+}
+type StoreConfigMetadataConfig struct{
+	ConnectionDetails map[string]string `yaml:"connectionDetails"`
 }
 
 /*
@@ -80,6 +97,8 @@ Main configuration struct for the application.
 Containing all the sub-configurations.
 */
 type ApplicationConfig struct {
+	// Configuration for the Schduler
+	Scheduler SchedulerConfig `yaml:"schedulerConfig"`
 	// Configuration for the Store
 	Store StoreConfig `yaml:"storeConfig"`
 	// Configuration for the Collector
@@ -88,6 +107,7 @@ type ApplicationConfig struct {
 	DataSource []DataSourceConfig `yaml:"dataSourceConfig"`
 	// Queries to be executed to fetch metrics
 	Queries []map[string]interface{} `yaml:"queries"`
+	
 }
 
 func (cfg *ApplicationConfig) readConfigData(data []byte) {
