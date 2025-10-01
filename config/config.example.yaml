@@ -1,8 +1,7 @@
 schedulerConfig:
-  storage: "sqlite" # enum [redis, sqlite, postgres, memory]
+  storage: "memory" # enum [redis, sqlite, postgres, memory]
   metadata:
-    connectionDetails:
-      dbName: "test1"
+    connectionDetails: {}
 storeConfig:
   type: redis # enum [Local, Redis] can add more implementations later by implemnting the DataStore interface
   metadata:

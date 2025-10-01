@@ -24,6 +24,7 @@ type Metric struct {
 // represents the query object for queries defined in config
 type Query struct {
 	Name string	`yaml:"name"`
+	hash string 
 	DataSource string	`yaml:"dataSource"`
 	dataSource *datasource.IDataSource
 	Query string `yaml:"query"`
@@ -32,6 +33,14 @@ type Query struct {
 	Labels []Label	`yaml:"labels"`
 	Metrics []Metric `yaml:"metrics"`
 }
+
+func (query *Query) SetHash(hash string){
+	query.hash = hash
+}
+func (query *Query) GetHash() string {
+	return query.hash
+}
+
 func (query *Query) GetDataSource() *datasource.IDataSource {
 	return query.dataSource
 }
@@ -59,10 +68,10 @@ func (query *Query) Load(logger *logrus.Logger,  queryData map[string]interface{
 	return nil
 }
 
-func LoadMany(logger *logrus.Logger, queries []map[string]interface{}, dataSources map[string]datasource.IDataSource) []Query{
-	var result []Query
+func LoadMany(logger *logrus.Logger, queries []map[string]interface{}, dataSources map[string]datasource.IDataSource) []*Query{
+	var result []*Query
 	for i, queryMap := range queries{
-		result = append(result, Query{})
+		result = append(result, &Query{})
 		if err := result[i].Load(logger, queryMap , dataSources); err != nil {
 			logger.Errorf("Unable to parse queryMapping from queries in config  = %s ", queryMap)
 		}

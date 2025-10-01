@@ -36,7 +36,7 @@ type IQueryScheduler interface{
 }
 
 type QueryScheduler struct{
-	Queries []schema.Query
+	Queries []*schema.Query
 	cfg *config.ApplicationConfig
 	logger *logrus.Logger
 	scheduler *scheduler.Scheduler
@@ -47,11 +47,16 @@ type QueryScheduler struct{
 func (q *QueryScheduler) Init() error{
 	q.logger.Infof("total number of Queries : %d", len(q.Queries))
 	for _, query := range q.Queries {
-		if id, err := q.scheduler.RunEvery(time.Duration(query.QueryRefreshTime) * time.Second, q.ExecuteTask, &query  ); err != nil {
+		// assiging the schduled task id hash
+		var taskId string
+		if id, err := q.scheduler.RunEvery(time.Duration(query.QueryRefreshTime) * time.Second, q.ExecuteTask, query  ); err != nil {
 			q.logger.Errorf("Error while running task with id = %s", id )
 			q.logger.Debugf("Error while running task with id = %s | query = %s | %d", query, query.QueryRefreshTime)
 			return err
+		}else{
+			taskId = string(id)
 		}
+		query.SetHash(taskId)
 	}
 	return nil
 }
@@ -90,6 +95,6 @@ func (q *QueryScheduler) ExecuteTask(query *schema.Query) error {
 	return nil
 }
 
-func NewQuerySchduler(logger *logrus.Logger, cfg *config.ApplicationConfig, baseScheduler *scheduler.Scheduler, queries []schema.Query, store *cache.ICache, channel *chan bool) *QueryScheduler {
+func NewQuerySchduler(logger *logrus.Logger, cfg *config.ApplicationConfig, baseScheduler *scheduler.Scheduler, queries []*schema.Query, store *cache.ICache, channel *chan bool) *QueryScheduler {
 	return &QueryScheduler{logger: logger, cfg: cfg, scheduler: baseScheduler, Queries: queries, programChannel: channel, cacheStore: store}
 }
