@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/datasource"
+	"github.com/hamzausmani302/prometheus-database-exporter/internal/utils"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -14,6 +15,13 @@ import (
 	StaticValue string	`yaml:"staticValue"`
 	ColumnName string	`yaml:"columnName"`
 }
+func (l Label) IsStaticValue() bool{
+	if l.StaticValue != "" {
+		return true
+	}
+	return false
+}
+
 // struct representing single Metric object
 type Metric struct {
 	Name string `yaml:"name"`
@@ -33,12 +41,27 @@ type Query struct {
 	Labels []Label	`yaml:"labels"`
 	Metrics []Metric `yaml:"metrics"`
 }
-
+// Set the value of hash from outside
 func (query *Query) SetHash(hash string){
 	query.hash = hash
 }
+// Get the value of Query Hash
 func (query *Query) GetHash() string {
 	return query.hash
+}
+/*// Generate hash by the following way
+ 		MD5(query Name + SQL Query + label names + metrics labels )
+// */
+func (query *Query) GenerateHash() {
+	
+	payload := ""
+	for _, label := range query.Labels {
+		payload += label.Name
+	}
+	for _, metric := range query.Metrics {
+		payload += metric.Name
+	}
+	query.hash = utils.Hash(query.Name, query.Query, payload)
 }
 
 func (query *Query) GetDataSource() *datasource.IDataSource {

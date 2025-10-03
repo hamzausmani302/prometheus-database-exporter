@@ -28,4 +28,7 @@ type ICollector[T comparable] interface {
 	// the following method will be implemented by subclasses, to prepare data for scraping or to send to external systems
 	scrapeMetric( metrics []CollectorMetric[T]) error
 	// Collect method use the following method , callable by collector from ourside
+	GetCollectedMetrics() ([]CollectorMetric[T], error)
+	// Promethsu specofic methods
 }
+

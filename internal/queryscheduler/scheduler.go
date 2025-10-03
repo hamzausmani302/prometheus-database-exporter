@@ -48,15 +48,12 @@ func (q *QueryScheduler) Init() error{
 	q.logger.Infof("total number of Queries : %d", len(q.Queries))
 	for _, query := range q.Queries {
 		// assiging the schduled task id hash
-		var taskId string
 		if id, err := q.scheduler.RunEvery(time.Duration(query.QueryRefreshTime) * time.Second, q.ExecuteTask, query  ); err != nil {
 			q.logger.Errorf("Error while running task with id = %s", id )
 			q.logger.Debugf("Error while running task with id = %s | query = %s | %d", query, query.QueryRefreshTime)
 			return err
-		}else{
-			taskId = string(id)
 		}
-		query.SetHash(taskId)
+		query.GenerateHash()
 	}
 	return nil
 }
@@ -88,7 +85,7 @@ func (q *QueryScheduler) ExecuteTask(query *schema.Query) error {
 	
 	// put the data with the key in cacheStore 
 	if bytesDf,err := utils.DataFrameToCSVBytes(df); err == nil{
-		(*q.cacheStore).Set(query.Query, bytesDf, int64(query.QueryRefreshTime * 2))
+		(*q.cacheStore).Set(query.GetHash(), bytesDf, int64(query.QueryRefreshTime * 2))
 	} else{
 		q.logger.Errorf("error converting dataframe to bytes ", df)
 	}

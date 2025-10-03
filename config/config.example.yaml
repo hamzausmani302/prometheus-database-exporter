@@ -3,7 +3,7 @@ schedulerConfig:
   metadata:
     connectionDetails: {}
 storeConfig:
-  type: redis # enum [Local, Redis] can add more implementations later by implemnting the DataStore interface
+  type: "redis" # enum [Local, Redis] can add more implementations later by implemnting the DataStore interface
   metadata:
     connectionDetails:
       host: localhost
@@ -29,16 +29,16 @@ dataSourceConfig:
 queries:
   - name: taxi_rides
     dataSource: postgres-datastore
-    query: "select well_id AS well_name from t_well"
+    query: "select 'test' AS well_id, count(*) AS total_wells from t_well where to_load = false"
     queryRefreshTime: 30
     queryTimeout: 5
     labels:
       - name: database
         staticValue: id3_dashboard
-      - name: test
-        columnName: test_col
+      - name: test1
+        columnName: well_id
     metrics:
-      - name: well_name # metric will be taxi_rides_total_active_rides in prometheus
+      - name: total_wells # metric will be taxi_rides_total_active_rides in prometheus
         type: GAUGE
         help: "Total number of active rides"
-        column: total_active_rides
+        column: total_wells

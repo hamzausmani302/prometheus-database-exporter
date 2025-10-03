@@ -2,18 +2,24 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/hamzausmani302/prometheus-database-exporter/config"
-	"github.com/hamzausmani302/prometheus-database-exporter/internal/collector"
+	col "github.com/hamzausmani302/prometheus-database-exporter/internal/collector"
+	promcollector "github.com/hamzausmani302/prometheus-database-exporter/internal/collector/prometheus"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/datasource"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/factories"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/queryscheduler"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/schema"
 	"github.com/hamzausmani302/prometheus-database-exporter/pkg/go-scheduler"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 )
 
 func main() {
+	reg := prometheus.NewPedanticRegistry()
+
 	logger := logrus.New()
 	fmt.Println("Collector started")
     done := make(chan bool, 1)
@@ -42,10 +48,17 @@ func main() {
 		logger.Panic("cannot initialize the scheduler", err)
 		return;
 	}
-	
-	// Mapping Query to class object
-	promCollector := collector.PrometheusCollector{DataStore: cacheStore, Logger: logger}
-	if err := collector.Collect[string](&promCollector, queries); err != nil {
-		fmt.Println("error", err)
-	}
+	// Mapping Query to class Object
+	queryCollector := col.MCollector{DataStore: cacheStore, Logger: logger, Queries: queries}
+	// create the promethus collector	
+	reg.MustRegister(promcollector.PrometheusGoCollector{
+		Logger: logrus.New(),
+		Collector: &queryCollector,
+	})
+
+
+	http.Handle("/app-metrics", promhttp.Handler())
+	http.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
+
+	http.ListenAndServe(":2112", nil)	
 }
