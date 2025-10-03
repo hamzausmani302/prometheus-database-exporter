@@ -90,6 +90,9 @@ func (_collector *MCollector) mapToCollectorMetric(df dataframe.DataFrame, query
 						Name: fmt.Sprintf("%s_%s", query.Name, metric.Name),
 						Labels: labels,
 						Value: MMetricResultType(value),
+						Type: metric.Type,
+						Help: metric.Help,
+
 					}
 					exportMetrics = append(exportMetrics, exportMetric)
 				}
@@ -111,7 +114,7 @@ func (_collector *MCollector ) GetCollectedMetrics() ([]CollectorMetric[MMetricR
 	for _, query := range _collector.Queries{
 		_collector.Logger.Debugf("Query data for hash = %s",query.GetHash() )
 		df,err := _collector.getDataFromStore(query.GetHash())
-		fmt.Println("data", df)
+		_collector.Logger.Debug("data", df)
 		if err != nil {
 			_collector.Logger.Error(err)
 		}

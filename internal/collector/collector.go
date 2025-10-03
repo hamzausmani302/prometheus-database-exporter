@@ -9,6 +9,8 @@ import (
 type CollectorMetric[T comparable] struct {
 	Name   string
 	Labels []CollectorMetricLabel
+	Help string
+	Type string
 	Value  T
 }
 // Struct represening the label for the metric

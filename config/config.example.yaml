@@ -29,13 +29,13 @@ dataSourceConfig:
 queries:
   - name: taxi_rides
     dataSource: postgres-datastore
-    query: "select 'test' AS well_id, count(*) AS total_wells from t_well where to_load = false"
+    query: "select 'test1' AS well_id, 10 AS total_wells from t_well where to_load = false"
     queryRefreshTime: 30
     queryTimeout: 5
     labels:
       - name: database
-        staticValue: id3_dashboard
-      - name: test1
+        staticValue: id3_dashboard1
+      - name: well_id
         columnName: well_id
     metrics:
       - name: total_wells # metric will be taxi_rides_total_active_rides in prometheus

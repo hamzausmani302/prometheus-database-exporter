@@ -29,7 +29,7 @@ func (p PrometheusGoCollector) Describe(ch chan<- *prometheus.Desc) {
         // assume CollectorMetric has a Desc() method or fields for name/help/labels
         ch <- prometheus.NewDesc(
             m.Name,        // metric name
-            "Help not available",        // help text
+            m.Help,        // help text
             labels,      // variable labels
             nil,           // constant labels
         )
@@ -42,12 +42,14 @@ func (p PrometheusGoCollector) Collect(ch chan<- prometheus.Metric) {
     if err != nil {
         p.Logger.Warn(err)
     }
+    descLabels:= []string{}
     for _, m := range metrics {
         labels := []string{}
 		for _, label := range m.Labels{
-			labels = append(labels, label.Name)
-		}
-		desc := prometheus.NewDesc(m.Name, "Help not available", labels, nil)
+			labels = append(labels, label.Value)
+            descLabels = append(descLabels, label.Name)
+        }
+		desc := prometheus.NewDesc(m.Name, m.Help, descLabels, nil)
         // add support for counter  nad everything else via a factory function 
         // by supplying the channel and let the factory handle putting data in channel
         metric, err := prometheus.NewConstMetric(
