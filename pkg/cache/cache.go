@@ -21,11 +21,16 @@ type LocalTimeCache struct {
 
 // Get value for specified key
 func (ltc *LocalTimeCache) Get(key string) ([]byte, error) {
-	value := ltc.Cache.Get(key).([]byte)
-	now := time.Now()
-	if value != nil && ltc.TtlLookup[key] > now.UnixMilli() {
-		return value, nil
+	var value []byte;
+	gotValue := ltc.Cache.Get(key)
+	if gotValue != nil {
+		value = gotValue.([]byte)
+		now := time.Now()
+		if value != nil && ltc.TtlLookup[key] > now.UnixMilli() {
+			return value, nil
+		}
 	}
+	
 	return nil, errors.New("Not Found")
 }
 /*

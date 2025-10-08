@@ -4,8 +4,6 @@ github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym
 github.com/ajstarks/svgo v0.0.0-20180226025133-644b8db467af/go.mod h1:K08gAheRH3/J6wwsYMMT4xOr94bZjxIelGM0+d/wbFw=
 github.com/aleksiumish/in-memory-cache v0.0.0-20221207194228-7a96563e9c52 h1:ajCbt1WtWiKCqxCY9R2qzS9WXepBiddeH9Cs17IjsYI=
 github.com/aleksiumish/in-memory-cache v0.0.0-20221207194228-7a96563e9c52/go.mod h1:3141dDh9AaKOBt9CeJSALmmhARo3/QZLT2KDnBkjfYE=
-github.com/algorythma/go-scheduler v0.0.0-20181205072605-14b57fd34811 h1:LjuyuNT/Y8QBH/7pRFJFGdJ4o/0JSmYKHa3JL45pm+k=
-github.com/algorythma/go-scheduler v0.0.0-20181205072605-14b57fd34811/go.mod h1:n7BJ3viqTjmaPH8z7ioGiUJ1cB1UIZ2VxfXHKZr8Rlk=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/boombuler/barcode v1.0.0/go.mod h1:paBWMcWSl3LHKBqUq+rly7CNSldXjb2rDl3JlRe0mD8=

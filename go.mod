@@ -6,14 +6,19 @@ require (
 	github.com/aleksiumish/in-memory-cache v0.0.0-20221207194228-7a96563e9c52
 	github.com/go-gota/gota v0.12.0
 	github.com/lib/pq v1.10.9
-	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/prometheus/client_golang v1.23.2
 	github.com/redis/go-redis/v9 v9.14.0
 	github.com/sirupsen/logrus v1.9.3
-	github.com/stretchr/testify v1.11.1
 	gopkg.in/yaml.v3 v3.0.1
 )
+
+require (
+	github.com/mattn/go-sqlite3 v1.14.32 // indirect
+	github.com/stretchr/testify v1.11.1 // indirect
+)
+
 replace github.com/algorythma/go-scheduler => ./pkg/go-scheduler
+
 require (
 	github.com/algorythma/go-scheduler v0.0.0
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -34,4 +39,3 @@ require (
 	gonum.org/v1/gonum v0.9.1 // indirect
 	google.golang.org/protobuf v1.36.8 // indirect
 )
-
