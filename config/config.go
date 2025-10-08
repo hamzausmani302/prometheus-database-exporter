@@ -33,6 +33,7 @@ const (
 	// enum mapping for SchedulerType
 	Memory SchedulerType = "memory"
 	Sqlite SchedulerType = "sqlite"
+	Redis SchedulerType = "redis"
 
 )
 

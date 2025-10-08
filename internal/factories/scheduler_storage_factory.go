@@ -38,6 +38,20 @@ func (dsf *SchedulerStorageFactory) Create( schedulerConfig config.SchedulerConf
 			return nil, err
 		}
 		return strg, nil
+	}else if strings.ToLower(string(schedulerConfig.Storage)) == strings.ToLower(string(config.Redis)){
+		if schedulerConfig.Metadata.ConnectionDetails["dbName"] == "" {
+			dsf.logger.Warn("dbName not provided")
+			return nil, errors.New("DbName not provided")
+		}
+		dsf.logger.Debugf("sc", schedulerConfig)
+		strg, _ := storage.NewRedisStorage(storage.RedisConfig{
+			Host: "test",
+			Port: 6379,
+			Password: "",
+			Db: 0,
+		})
+		
+		return strg, nil
 	}
 	dsf.logger.Fatalf("Invalid Storage type: %s", schedulerConfig.Storage)
 	return nil, errors.New(fmt.Sprintf("Invalid Storage type: %s", schedulerConfig.Storage))

@@ -3,11 +3,11 @@ package queryscheduler
 import (
 	"time"
 
+	"github.com/algorythma/go-scheduler"
 	"github.com/hamzausmani302/prometheus-database-exporter/config"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/datasource"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/schema"
 	"github.com/hamzausmani302/prometheus-database-exporter/pkg/cache"
-	"github.com/hamzausmani302/prometheus-database-exporter/pkg/go-scheduler"
 	"github.com/hamzausmani302/prometheus-database-exporter/pkg/utils"
 
 	"github.com/sirupsen/logrus"

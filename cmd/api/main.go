@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/algorythma/go-scheduler"
 	"github.com/hamzausmani302/prometheus-database-exporter/config"
 	col "github.com/hamzausmani302/prometheus-database-exporter/internal/collector"
 	promcollector "github.com/hamzausmani302/prometheus-database-exporter/internal/collector/prometheus"
@@ -11,7 +12,6 @@ import (
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/factories"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/queryscheduler"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/schema"
-	"github.com/hamzausmani302/prometheus-database-exporter/pkg/go-scheduler"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"

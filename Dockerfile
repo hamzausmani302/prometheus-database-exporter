@@ -1,7 +1,37 @@
-# Take platform as input
+# ---- Build stage ----
+FROM golang:1.24.7-bookworm AS builder
 
-# Create a build for collector: build-collector
+WORKDIR /app
 
-# Create a build for API : build-api
+# Build-time argument: "api" or "collector"
+ARG SERVICE=api
+ENV SERVICE=${SERVICE}
+COPY pkg pkg
+# Copy only what's needed first
+COPY go.mod  ./
+RUN go mod tidy
+# Copy the rest
+COPY . .
 
-# Run both api and collector in runner stage
+# Build only the selected binary
+RUN echo "Building ${SERVICE}..." && \
+    CGO_ENABLED=1 GOOS=linux go build -o bin/${SERVICE} ./cmd/${SERVICE}
+
+# ---- Runtime stage ----
+FROM debian:bookworm-slim AS runner
+WORKDIR /app
+
+# Copy the single binary
+ARG SERVICE=api
+ENV SERVICE=${SERVICE}
+COPY --from=builder /app/bin/${SERVICE} ./${SERVICE}
+
+# Copy config if needed
+COPY config ./config
+COPY .ver .ver
+
+# Optional: expose ports (only if the API needs it)
+EXPOSE 8080
+
+# Run the chosen service
+ENTRYPOINT ["sh", "-c", "./${SERVICE}"]

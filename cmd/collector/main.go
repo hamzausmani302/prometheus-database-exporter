@@ -12,8 +12,8 @@ import (
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/queryscheduler"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/schema"
 
+	"github.com/algorythma/go-scheduler"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/factories"
-	"github.com/hamzausmani302/prometheus-database-exporter/pkg/go-scheduler"
 
 	"github.com/sirupsen/logrus"
 )
