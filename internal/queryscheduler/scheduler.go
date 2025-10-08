@@ -58,6 +58,7 @@ func (q *QueryScheduler) Init() error{
 	return nil
 }
 func (q *QueryScheduler) Start() error{
+	q.logger.Debug("Schduler starting")
 	if err := q.scheduler.Start(); err != nil {
 		q.logger.Fatal("Error running scheduler", err)
 	}

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/algorythma/go-scheduler"
@@ -17,12 +16,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+
 func main() {
 	reg := prometheus.NewPedanticRegistry()
 
 	logger := logrus.New()
-	fmt.Println("Collector started")
-    done := make(chan bool, 1)
+	done := make(chan bool, 1)
 
 	// Read config from file
 	cfg := config.GetConfig("example", logger)

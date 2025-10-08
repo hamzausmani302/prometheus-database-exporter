@@ -25,7 +25,8 @@ func (_collector *MCollector) getDataFromStore(key string) (dataframe.DataFrame,
 	// fetching data from store
 	_collector.Logger.Infof("Getting data for task id = %s", key)
 	var bytesData []byte;
-	if d, err := _collector.DataStore.Get(key); err == nil {
+	if d, err := _collector.DataStore.Get(key); err == nil && d != nil {
+		_collector.Logger.Debug(d)
 		bytesData = d
 	}else{
 		return dataframe.DataFrame{}, err
