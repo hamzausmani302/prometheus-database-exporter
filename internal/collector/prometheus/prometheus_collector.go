@@ -5,6 +5,8 @@ for prometheus
 package promcollector
 
 import (
+	"fmt"
+
 	schemacollector "github.com/hamzausmani302/prometheus-database-exporter/internal/collector"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -18,6 +20,7 @@ type PrometheusGoCollector struct {
 // Describe sends metric descriptions to Prometheus
 func (p PrometheusGoCollector) Describe(ch chan<- *prometheus.Desc) {
     metrics, err := p.Collector.GetCollectedMetrics()
+    fmt.Println("describe", metrics)
     if err != nil {
         p.Logger.Warn(err)
     }
@@ -38,7 +41,9 @@ func (p PrometheusGoCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect sends metric values to Prometheus
 func (p PrometheusGoCollector) Collect(ch chan<- prometheus.Metric) {
-	metrics, err := p.Collector.GetCollectedMetrics()
+	fmt.Printf("Collect called\n")
+    metrics, err := p.Collector.GetCollectedMetrics()
+     fmt.Println("collect", metrics)
     if err != nil {
         p.Logger.Warn(err)
     }

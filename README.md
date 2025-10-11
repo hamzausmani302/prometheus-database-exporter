@@ -88,9 +88,9 @@ This project is open source under the [MIT License](LICENSE).
 
 ## TODO
 
-1. Simplify collector and API startups
-2. In case of non distibuted store, allow support for standalone exporter with both (collector/api)
-3. Add cmd for standalone setup
+1. Simplify collector and API startups (Push startups in application strict itself in cmd) ✅
+2. In case of non distibuted store, allow support for standalone exporter with both (collector/api)✅
+3. Add cmd for standalone setup ✅
 4. Create test cases for exporeter to test all functionality
 5. Create CI pipelines to build to following
    1. Push Image to docker on tag
