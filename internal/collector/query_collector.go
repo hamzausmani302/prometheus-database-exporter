@@ -16,7 +16,7 @@ import (
 type MMetricResultType float64;
 type MCollector struct {
 	Logger *logrus.Logger
-	DataStore cache.ICache
+	DataStore *cache.ICache
 	Queries []*schema.Query
 	
 }
@@ -25,7 +25,7 @@ func (_collector *MCollector) getDataFromStore(key string) (dataframe.DataFrame,
 	// fetching data from store
 	_collector.Logger.Infof("Getting data for task id = %s", key)
 	var bytesData []byte;
-	if d, err := _collector.DataStore.Get(key); err == nil && d != nil {
+	if d, err := (*_collector.DataStore).Get(key); err == nil && d != nil {
 		_collector.Logger.Debug(d)
 		bytesData = d
 	}else{
@@ -135,12 +135,4 @@ func (_collector *MCollector) scrapeMetric(metrics []CollectorMetric[MMetricResu
 	return nil
 }
 
-
-func  Collect[T comparable](_collector ICollector[MMetricResultType], queries []*schema.Query) ([]CollectorMetric[MMetricResultType], error) {
-	result, err := _collector.GetCollectedMetrics(); 
-	if err != nil {
-		return []CollectorMetric[MMetricResultType]{}, err
-	}
-	return result, nil
-}
 

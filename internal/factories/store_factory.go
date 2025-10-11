@@ -18,12 +18,15 @@ type CacheStoreFactory struct{
 }
 
 func (dsf *CacheStoreFactory) Create( storeConfig config.StoreConfig) cache.ICache {
+	dsf.logger.Debugf("storeConfig", storeConfig)
+	dsf.logger.Debugf("Creating %s store", storeConfig.StoreType)
+	
 	if storeConfig.StoreType == "local"{
 		return cache.NewLocaltimeCache()
 	}else if storeConfig.StoreType == "redis"{
 		port, err := strconv.Atoi(storeConfig.Metadata.ConnectionDetails["port"])
 		if err != nil{
-			dsf.logger.Warn("Store Config Port not specified")
+			dsf.logger.Warn("Store Config Port not specified", err)
 		}
 		return cache.NewRedisCache(cache.RedisConnectionSettings{
 			Host: storeConfig.Metadata.ConnectionDetails["host"],

@@ -66,6 +66,7 @@ func (q *QueryScheduler) Start() error{
 }
 
 func (q *QueryScheduler) Stop() error {
+	q.scheduler.Clear()
 	q.scheduler.Stop()
 	return nil
 }
