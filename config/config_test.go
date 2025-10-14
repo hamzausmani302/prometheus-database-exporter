@@ -5,8 +5,8 @@ import (
 )
 
 func TestReadConfig(t *testing.T) {
-	manifest := 
-`storeConfig:
+	manifest :=
+		`storeConfig:
   type: local # enum [Local, Redis] can add more implementations later by implemnting the DataStore interface
   metadata:
     connectionDetails: {}
@@ -52,13 +52,13 @@ queries:
         help: "Total number of active rides"
         column: total_active_rides`
 
-	var appConfig ApplicationConfig;
+	var appConfig ApplicationConfig
 	appConfig.readConfigData([]byte(manifest))
 	if appConfig.Store.StoreType != "local" {
 		t.Errorf("Expected: %s  Got: %s ", "local", appConfig.Store.StoreType)
 	}
 	if len(appConfig.Queries) != 1 {
-		t.Errorf("Expected: %d Got: %d", 1 , len(appConfig.Queries ))
+		t.Errorf("Expected: %d Got: %d", 1, len(appConfig.Queries))
 	}
 
 }

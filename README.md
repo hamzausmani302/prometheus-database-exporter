@@ -101,6 +101,9 @@ This project is open source under the [MIT License](LICENSE).
    2. Print result from redis
    3. Print result of exporter for te query or all
 
+# Lint 
+bash`golangci-lint run`
+
 ## Contact
 
 For questions or support, open an issue or reach out via GitHub Discussions.

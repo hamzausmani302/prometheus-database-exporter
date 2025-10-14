@@ -12,25 +12,25 @@ import (
 Factory class to initiate the configurations and provide abstraction over the creation of
 datasource objects
 */
-type CacheStoreFactory struct{
+type CacheStoreFactory struct {
 	logger *logrus.Logger
-	cfg *config.ApplicationConfig
+	cfg    *config.ApplicationConfig
 }
 
-func (dsf *CacheStoreFactory) Create( storeConfig config.StoreConfig) cache.ICache {
-	dsf.logger.Debugf("storeConfig", storeConfig)
+func (dsf *CacheStoreFactory) Create(storeConfig config.StoreConfig) cache.ICache {
+	dsf.logger.Debug("storeConfig", storeConfig)
 	dsf.logger.Debugf("Creating %s store", storeConfig.StoreType)
-	
-	if storeConfig.StoreType == "local"{
+
+	if storeConfig.StoreType == "local" {
 		return cache.NewLocaltimeCache()
-	}else if storeConfig.StoreType == "redis"{
+	} else if storeConfig.StoreType == "redis" {
 		port, err := strconv.Atoi(storeConfig.Metadata.ConnectionDetails["port"])
-		if err != nil{
+		if err != nil {
 			dsf.logger.Warn("Store Config Port not specified", err)
 		}
 		return cache.NewRedisCache(cache.RedisConnectionSettings{
-			Host: storeConfig.Metadata.ConnectionDetails["host"],
-			Port: port,
+			Host:     storeConfig.Metadata.ConnectionDetails["host"],
+			Port:     port,
 			Password: storeConfig.Metadata.ConnectionDetails["password"],
 		})
 	}
@@ -38,6 +38,6 @@ func (dsf *CacheStoreFactory) Create( storeConfig config.StoreConfig) cache.ICac
 	return nil
 }
 
-func NewCacheStoreFactory(logger *logrus.Logger, cfg *config.ApplicationConfig) *CacheStoreFactory{
-	return &CacheStoreFactory{logger: logger, cfg: cfg};
-} 
+func NewCacheStoreFactory(logger *logrus.Logger, cfg *config.ApplicationConfig) *CacheStoreFactory {
+	return &CacheStoreFactory{logger: logger, cfg: cfg}
+}

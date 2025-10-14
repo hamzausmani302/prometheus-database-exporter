@@ -42,6 +42,10 @@ func NewRedisCache(options RedisConnectionSettings) *RedisCache {
 	}
 }
 
+func (r *RedisCache) GetCacheType() string {
+	return "redis"
+}
+
 func (r *RedisCache) Get(key string) ([]byte, error) {
 	val, err := r.client.Get(r.ctx, key).Bytes()
 	fmt.Println("data got =", string(val))

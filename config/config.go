@@ -18,12 +18,12 @@ Also defines enums for DataSourceType and CollectorType.
 */
 // Enums for DataSourceType and CollectorType
 type DataSourceType string
+
 // Enums for DataSourceType and CollectorType
 type CollectorType string
+
 // Enums for Schedulertype
 type SchedulerType string
-
-
 
 const (
 	// Enum mapping for DataSourceType
@@ -33,21 +33,19 @@ const (
 	// enum mapping for SchedulerType
 	Memory SchedulerType = "memory"
 	Sqlite SchedulerType = "sqlite"
-	Redis SchedulerType = "redis"
-
+	Redis  SchedulerType = "redis"
 )
 
 /*
 configuration for the task schduler
 */
 type SchedulerConfig struct {
-	Storage SchedulerType `yaml:"storage"`
+	Storage  SchedulerType           `yaml:"storage"`
 	Metadata SchedulerMetadataConfig `yaml:"metadata"`
 }
-type SchedulerMetadataConfig struct{
+type SchedulerMetadataConfig struct {
 	ConnectionDetails map[string]string `yaml:"connectionDetails"`
 }
-
 
 /*
 Configuration structs for the Store.
@@ -58,7 +56,7 @@ type StoreConfig struct {
 	// Metadata for the store (Specifying connection details)
 	Metadata StoreConfigMetadataConfig `yaml:"metadata"`
 }
-type StoreConfigMetadataConfig struct{
+type StoreConfigMetadataConfig struct {
 	ConnectionDetails map[string]string `yaml:"connectionDetails"`
 }
 
@@ -108,7 +106,6 @@ type ApplicationConfig struct {
 	DataSource []DataSourceConfig `yaml:"dataSourceConfig"`
 	// Queries to be executed to fetch metrics
 	Queries []map[string]interface{} `yaml:"queries"`
-	
 }
 
 func (cfg *ApplicationConfig) readConfigData(data []byte) {
@@ -116,18 +113,18 @@ func (cfg *ApplicationConfig) readConfigData(data []byte) {
 	if err != nil {
 		log.Fatalf("Error unmarshaling YAML: %v", err)
 	}
-} 
+}
 
+var appCfg *ApplicationConfig
 
-var appCfg *ApplicationConfig;
 func GetConfig(env string, logger *logrus.Logger) ApplicationConfig {
-	var applicationConfig ApplicationConfig;
+	var applicationConfig ApplicationConfig
 	if appCfg == nil {
 		logger.SetLevel(logrus.DebugLevel)
 		configFilePath := path.Join("config", fmt.Sprintf("config.%s.yaml", env))
 		logger.Infof("Reading config file: %s ", configFilePath)
-	// Read the config file
-	
+		// Read the config file
+
 		content, err := os.ReadFile(configFilePath)
 		if err != nil {
 			logger.Fatalf("Error reading file: %v", err)
@@ -136,6 +133,6 @@ func GetConfig(env string, logger *logrus.Logger) ApplicationConfig {
 		applicationConfig.readConfigData(content)
 		// fmt.Println(applicationConfig)
 		appCfg = &applicationConfig
-	} 
+	}
 	return *appCfg
 }
