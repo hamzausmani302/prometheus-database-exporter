@@ -12,31 +12,33 @@ import (
 func main() {
 	rootLogger := logrus.New()
 	sigs := make(chan os.Signal, 1)
-    signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-    done := make(chan bool, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	done := make(chan bool, 1)
 
 	app := initiator.Application{Done: done}
-	app.Init()
+	if err := app.Init(); err != nil {
+		rootLogger.Panic("Failed to initialize application", err)
+		return
+	}
 	go app.StartCollector()
 	go app.StartApi()
 
 	go func() {
 		// Listens for intended termination and terminate the memory addresses
 		rootLogger.Info("triggered executing")
-        sig := <-sigs
-        rootLogger.Debug(sig)
-        done <- true
+		sig := <-sigs
+		rootLogger.Debug(sig)
+		done <- true
 		// close scheduler
 		if err := app.CleanUp(); err != nil {
 			rootLogger.Error(err)
-		}else{
+		} else {
 			rootLogger.Info("closed successfully")
 		}
 		close(sigs)
 		close(done)
 	}()
-	
-	<- done
+
+	<-done
 	rootLogger.Info("Exiting out of main thread")
 }
-

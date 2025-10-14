@@ -24,7 +24,7 @@ interface {
 	Note: Although I dont think that is a good idea
 }
 */
-type IQueryScheduler interface{
+type IQueryScheduler interface {
 	// Initialization of objects & scheduler
 	Init() error
 	// Start the scheduler
@@ -35,29 +35,29 @@ type IQueryScheduler interface{
 	Stop() error
 }
 
-type QueryScheduler struct{
-	Queries []*schema.Query
-	cfg *config.ApplicationConfig
-	logger *logrus.Logger
-	scheduler *scheduler.Scheduler
+type QueryScheduler struct {
+	Queries        []*schema.Query
+	cfg            *config.ApplicationConfig
+	logger         *logrus.Logger
+	scheduler      *scheduler.Scheduler
 	programChannel *chan bool
-	cacheStore *cache.ICache
+	cacheStore     *cache.ICache
 }
 
-func (q *QueryScheduler) Init() error{
+func (q *QueryScheduler) Init() error {
 	q.logger.Infof("total number of Queries : %d", len(q.Queries))
 	for _, query := range q.Queries {
 		// assiging the schduled task id hash
-		if id, err := q.scheduler.RunEvery(time.Duration(query.QueryRefreshTime) * time.Second, q.ExecuteTask, query  ); err != nil {
-			q.logger.Errorf("Error while running task with id = %s", id )
-			q.logger.Debugf("Error while running task with id = %s | query = %s | %d", query, query.QueryRefreshTime)
+		if id, err := q.scheduler.RunEvery(time.Duration(query.QueryRefreshTime)*time.Second, q.ExecuteTask, query); err != nil {
+			q.logger.Errorf("Error while running task with id = %s", id)
+			q.logger.Debugf("Error while running task with id = %s | query = %s | %d", query.GetHash(), query.Query, query.QueryRefreshTime)
 			return err
 		}
 		query.GenerateHash()
 	}
 	return nil
 }
-func (q *QueryScheduler) Start() error{
+func (q *QueryScheduler) Start() error {
 	q.logger.Debug("Schduler starting")
 	if err := q.scheduler.Start(); err != nil {
 		q.logger.Fatal("Error running scheduler", err)
@@ -70,6 +70,7 @@ func (q *QueryScheduler) Stop() error {
 	q.scheduler.Stop()
 	return nil
 }
+
 // The actual task workflow will be written here
 func (q *QueryScheduler) ExecuteTask(query *schema.Query) error {
 	now := time.DateTime
@@ -84,12 +85,15 @@ func (q *QueryScheduler) ExecuteTask(query *schema.Query) error {
 		Query: query.Query,
 	})
 	q.logger.Debug(df)
-	
-	// put the data with the key in cacheStore 
-	if bytesDf,err := utils.DataFrameToCSVBytes(df); err == nil{
-		(*q.cacheStore).Set(query.GetHash(), bytesDf, int64(query.QueryRefreshTime * 2))
-	} else{
-		q.logger.Errorf("error converting dataframe to bytes ", df)
+
+	// put the data with the key in cacheStore
+	if bytesDf, err := utils.DataFrameToCSVBytes(df); err == nil {
+		if err := (*q.cacheStore).Set(query.GetHash(), bytesDf, int64(query.QueryRefreshTime*2)); err != nil {
+			q.logger.Error("error saving data to cache store ", err)
+			return err
+		}
+	} else {
+		q.logger.Error("error converting dataframe to bytes ", df)
 	}
 	return nil
 }

@@ -3,10 +3,13 @@ package datasource
 import (
 	"github.com/go-gota/gota/dataframe"
 )
+
 type QueryType string
+
 const (
 	SQLQueryType QueryType = "SQL"
 )
+
 /* Query arguments can be interchanged for different datasources
  */
 type IQuery interface {
@@ -19,4 +22,4 @@ type IDataSource interface {
 	GetData(query IQuery) dataframe.DataFrame
 	Connect() error
 	Close() error
-}	
+}

@@ -14,20 +14,20 @@ import (
 Factory class to initiate the configurations and provide abstraction over the creation of
 datasource objects
 */
-type SchedulerStorageFactory struct{
+type SchedulerStorageFactory struct {
 	logger *logrus.Logger
-	cfg *config.ApplicationConfig
+	cfg    *config.ApplicationConfig
 }
 
-func (dsf *SchedulerStorageFactory) Create( schedulerConfig config.SchedulerConfig) (storage.TaskStore, error){
-	if strings.ToLower(string(schedulerConfig.Storage)) == strings.ToLower(string(config.Memory)){
+func (dsf *SchedulerStorageFactory) Create(schedulerConfig config.SchedulerConfig) (storage.TaskStore, error) {
+	if strings.EqualFold(strings.ToLower(string(schedulerConfig.Storage)) , strings.ToLower(string(config.Memory)) ){
 		return storage.NewMemoryStorage(), nil
-	}else if strings.ToLower(string(schedulerConfig.Storage)) == strings.ToLower(string(config.Sqlite)){
+	} else if strings.EqualFold(strings.ToLower(string(schedulerConfig.Storage)), strings.ToLower(string(config.Sqlite))) {
 		if schedulerConfig.Metadata.ConnectionDetails["dbName"] == "" {
 			dsf.logger.Warn("dbName not provided")
 			return nil, errors.New("DbName not provided")
 		}
-		dsf.logger.Debugf("sc", schedulerConfig)
+		dsf.logger.Debugf("sc = %s", schedulerConfig)
 		strg := storage.NewSqlite3Storage(storage.Sqlite3Config{
 			DbName: "test123",
 		})
@@ -38,25 +38,25 @@ func (dsf *SchedulerStorageFactory) Create( schedulerConfig config.SchedulerConf
 			return nil, err
 		}
 		return strg, nil
-	}else if strings.ToLower(string(schedulerConfig.Storage)) == strings.ToLower(string(config.Redis)){
+	} else if strings.EqualFold(strings.ToLower(string(schedulerConfig.Storage)), strings.ToLower(string(config.Redis))) {
 		if schedulerConfig.Metadata.ConnectionDetails["dbName"] == "" {
 			dsf.logger.Warn("dbName not provided")
 			return nil, errors.New("DbName not provided")
 		}
-		dsf.logger.Debugf("sc", schedulerConfig)
+		dsf.logger.Debug("sc", schedulerConfig)
 		strg, _ := storage.NewRedisStorage(storage.RedisConfig{
-			Host: "test",
-			Port: 6379,
+			Host:     "test",
+			Port:     6379,
 			Password: "",
-			Db: 0,
+			Db:       0,
 		})
-		
+
 		return strg, nil
 	}
 	dsf.logger.Fatalf("Invalid Storage type: %s", schedulerConfig.Storage)
-	return nil, errors.New(fmt.Sprintf("Invalid Storage type: %s", schedulerConfig.Storage))
+	return nil, fmt.Errorf("Invalid Storage type: %s", schedulerConfig.Storage)
 }
 
-func NewSchdulerStorageFactory(logger *logrus.Logger, cfg *config.ApplicationConfig) *SchedulerStorageFactory{
+func NewSchdulerStorageFactory(logger *logrus.Logger, cfg *config.ApplicationConfig) *SchedulerStorageFactory {
 	return &SchedulerStorageFactory{logger, cfg}
-} 
+}

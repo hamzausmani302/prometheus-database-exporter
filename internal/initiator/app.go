@@ -21,17 +21,17 @@ import (
 
 // Application struct to hold the application state and configurations
 type Application struct {
-	logger *logrus.Logger
-	store *cache.ICache
-	cfg *config.ApplicationConfig
+	logger        *logrus.Logger
+	store         *cache.ICache
+	cfg           *config.ApplicationConfig
 	dataSourceMap map[string]datasource.IDataSource
-	queries []*schema.Query
-	storage _storage.TaskStore
-	qScheduler queryscheduler.IQueryScheduler
-	registry *prometheus.Registry
-	Done chan bool
-	
+	queries       []*schema.Query
+	storage       _storage.TaskStore
+	qScheduler    queryscheduler.IQueryScheduler
+	registry      *prometheus.Registry
+	Done          chan bool
 }
+
 // Setup and initialize the application components by resolving dependencies
 func (app *Application) Init() error {
 	app.logger = logrus.New()
@@ -40,10 +40,9 @@ func (app *Application) Init() error {
 	app.cfg = &cfg
 	app.logger.Debug(cfg)
 
-
 	// initilizing data sources
 	app.dataSourceMap = map[string]datasource.IDataSource{}
-	for _, dsource := range cfg.DataSource{
+	for _, dsource := range cfg.DataSource {
 		app.dataSourceMap[dsource.Name] = factories.NewDatasourceFactory(app.logger, &cfg).Create(dsource)
 	}
 
@@ -55,15 +54,16 @@ func (app *Application) Init() error {
 
 	// Initializing schduler
 	storage, storageErr := factories.NewSchdulerStorageFactory(app.logger, &cfg).Create(cfg.Scheduler)
+	app.storage = storage
 	if storageErr != nil {
 		app.logger.Panic(storageErr)
-		return storageErr;
+		return storageErr
 	}
 	sch := scheduler.New(storage)
-	qScheduler := queryscheduler.NewQuerySchduler(app.logger, &cfg, &sch, app.queries, app.store,  &app.Done )
+	qScheduler := queryscheduler.NewQuerySchduler(app.logger, &cfg, &sch, app.queries, app.store, &app.Done)
 	if err := qScheduler.Init(); err != nil {
 		app.logger.Panic("cannot initialize the scheduler", err)
-		return err;
+		return err
 	}
 	app.qScheduler = qScheduler
 	app.logger.Info("Configuration initilialized successfully")
@@ -72,27 +72,29 @@ func (app *Application) Init() error {
 }
 
 // StartCollector starts the metric collection process
-func (app *Application) StartCollector(){
+func (app *Application) StartCollector() {
 	app.logger.Debug("Starting collector")
-	app.qScheduler.Start()
+	if err := app.qScheduler.Start(); err != nil {
+		app.logger.Panic("Failed to start collector", err)
+	}
 }
 
 // registerCollectors registers the metric collectors with Prometheus or additional backends
-func (app *Application) registerCollectors(){
+func (app *Application) registerCollectors() {
 	collectorConfig := app.cfg.Collector
 	queryCollector := col.MCollector{DataStore: app.store, Logger: app.logger, Queries: app.queries}
 	// all collectors will be registered here
-	if strings.ToLower(string(collectorConfig.CollectType)) == strings.ToLower(string(config.Prometheus)) {
+	if strings.EqualFold(strings.ToLower(string(collectorConfig.CollectType)), strings.ToLower(string(config.Prometheus))) {
 		// register prometheus collector
 		app.registry.MustRegister(promcollector.PrometheusGoCollector{
-			Logger: app.logger,
+			Logger:    app.logger,
 			Collector: &queryCollector,
-		})	
+		})
 	}
 }
 
 // StartApi starts the API server to expose metrics
-func (app *Application) StartApi(){
+func (app *Application) StartApi() {
 	// Initialize registry for API
 	app.logger.Debug("Starting API")
 	app.registry = prometheus.NewPedanticRegistry()
@@ -100,19 +102,21 @@ func (app *Application) StartApi(){
 	http.Handle("/app-metrics", promhttp.Handler())
 	http.Handle("/metrics", promhttp.HandlerFor(app.registry, promhttp.HandlerOpts{}))
 
-	http.ListenAndServe(":2112", nil)
+	if err := http.ListenAndServe(":2112", nil)	; err != nil {
+		panic(err)
+	}
 
 }
 
 // CleanUp performs cleanup operations before shutting down the application
-func (app *Application) CleanUp() error{
+func (app *Application) CleanUp() error {
 	if err := app.qScheduler.Stop(); err != nil {
 		return err
 	}
-	for _, dsource := range app.dataSourceMap{
-		if err :=  dsource.Close(); err != nil {
+	for _, dsource := range app.dataSourceMap {
+		if err := dsource.Close(); err != nil {
 			return err
 		}
-	}	
+	}
 	return nil
-} 
+}
