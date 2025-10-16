@@ -58,10 +58,15 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.22'
-    - name: Build Image
+    - name: Build Collector
       run: |
-        echo "Building binary package"
-        sleep 10
+        echo "Building collector binary package"
+        go build -o bin/collector-1.0.0 .\cmd\collector\
+        echo "Done bulding executable"    
+    - name: Build Api
+      run: |
+        echo "Building api binary package"
+        go build -o bin/api-1.0.0 .\cmd\api\
         echo "Done bulding executable"
 
   push-executable-to-s3:
