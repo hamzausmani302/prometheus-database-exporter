@@ -46,7 +46,7 @@ jobs:
         echo ${{ env.DOCKER_USERNAME }} $DOCKER_USERNAME ${{ vars.DOCKER_USERNAME }}
         TAG_NAME="1.0.0"
         git submodule update --init --recursive
-        docker build -t hamzausmani021/prometheus-database-exporter:$TAG_NAME
+        docker build -t hamzausmani021/prometheus-database-exporter:$TAG_NAME .
         echo "Done bulding docker image and push"
 
   build-executable:
@@ -62,12 +62,14 @@ jobs:
     - name: Build Collector
       run: |
         echo "Building collector binary package"
-        go build -o bin/collector-1.0.0 .\cmd\collector\
+        export GOOS=linux
+        go build .\cmd\collector\  -o bin/collector-1.0.0
         echo "Done bulding executable"    
     - name: Build Api
       run: |
         echo "Building api binary package"
-        go build -o bin/api-1.0.0 .\cmd\api\
+        export GOOS=linux
+        go build .\cmd\api\ -o bin/api-1.0.0
         echo "Done bulding executable"
 
   push-executable-to-s3:
