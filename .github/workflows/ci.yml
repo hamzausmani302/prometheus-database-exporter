@@ -23,6 +23,7 @@ jobs:
       run: |
         cd pkg/go-scheduler
         go mod tidy
+        ls -al
         cd ../..
     - name: Testing linting
       run: go vet ./... 
