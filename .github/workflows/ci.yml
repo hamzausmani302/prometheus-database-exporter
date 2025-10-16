@@ -8,7 +8,7 @@ on:
 
 jobs:
 
-  build:
+  unit-testing:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -16,8 +16,58 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.22'
+    - name: Starting unit testing
+      run: |
+        echo "Starting unit test"
+        sleep 5
+        echo "Done unit testing"
+    # - name: Testing linting
+    #   run: go vet ./... 
+    # - name: Unit test
+    #   run: go test  ./...
 
-    - name: Test the workflow
-      run: go test  ./...
+  build-docker-image:
+    runs-on: ubuntu-latest
+    needs: [unit-testing]
+    steps:  
+    - name: Docker Setup Docker
+      uses: docker/setup-docker-action@v4.4.0
+    - uses: actions/checkout@v4
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+    - name: Build Image
+      run: |
+        echo "Building docker image"
+        sleep 10
+        echo "Done bulding docker image and push"
 
+  build-executable:
+    runs-on: ubuntu-latest
+    needs: [unit-testing]
+    steps:  
+    - uses: actions/checkout@v4
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+    - name: Build Image
+      run: |
+        echo "Building binary package"
+        sleep 10
+        echo "Done bulding executable"
+
+  push-executable-to-s3:
+    runs-on: ubuntu-latest
+    needs: [build-executable]
+    steps:
+    - name: Pushing executbale to S3
+      run: |
+        echo "Uploading to S3"
+        sleep 4
+        echo "Executable deployed to S3"
+    
+    
   
+        
