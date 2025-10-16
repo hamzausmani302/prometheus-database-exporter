@@ -63,13 +63,13 @@ jobs:
       run: |
         echo "Building collector binary package"
         export GOOS=linux
-        go build .\cmd\collector\  -o bin/collector-1.0.0
+        go build ./cmd/collector/  -o bin/collector-1.0.0
         echo "Done bulding executable"    
     - name: Build Api
       run: |
         echo "Building api binary package"
         export GOOS=linux
-        go build .\cmd\api\ -o bin/api-1.0.0
+        go build ./cmd/api/ -o bin/api-1.0.0
         echo "Done bulding executable"
 
   push-executable-to-s3:
