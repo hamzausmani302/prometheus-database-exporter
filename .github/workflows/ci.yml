@@ -45,8 +45,8 @@ jobs:
         echo "Building docker image"
         echo ${{ env.DOCKER_USERNAME }} $DOCKER_USERNAME ${{ vars.DOCKER_USERNAME }}
         TAG_NAME="1.0.0"
+        git submodule update --init --recursive
         docker build -t hamzausmani021/prometheus-database-exporter:$TAG_NAME
-        
         echo "Done bulding docker image and push"
 
   build-executable:
@@ -58,6 +58,7 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.22'
+    - run: git submodule update --init --recursive
     - name: Build Collector
       run: |
         echo "Building collector binary package"
