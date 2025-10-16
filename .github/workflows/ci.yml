@@ -21,6 +21,7 @@ jobs:
         echo "Starting unit test"
     - name: Fix the packages
       run: |
+        git submodule update --init --recursive
         cd pkg/go-scheduler
         ls -al
         cd ../..
