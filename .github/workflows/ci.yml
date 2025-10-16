@@ -19,12 +19,17 @@ jobs:
     - name: Starting unit testing
       run: |
         echo "Starting unit test"
-        sleep 5
-        echo "Done unit testing"
-    # - name: Testing linting
-    #   run: go vet ./... 
-    # - name: Unit test
-    #   run: go test  ./...
+    - name: Fix the packages
+      run: |
+        cd pkg/go-scheduler
+        go mod tody
+        cd ../..
+    - name: Testing linting
+      run: go vet ./... 
+    - name: Unit test
+      run: go test  ./...
+    - run: |
+        echo "Testing Successful"
 
   build-docker-image:
     runs-on: ubuntu-latest
