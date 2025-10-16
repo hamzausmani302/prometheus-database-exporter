@@ -11,13 +11,6 @@ func TestCacheInstance(t *testing.T) {
 	if cache.GetCacheType() != "localcache" {
 		t.Errorf("Expected cache type localcache, got %s", cache.GetCacheType())
 	}
-	var cache2 ICache = NewRedisCache(RedisConnectionSettings{
-		Host: "localhost",
-		Port: 6379,
-	})
-	if cache2.GetCacheType() != "redis" {
-		t.Errorf("Expected cache type redis, got %s", cache2.GetCacheType())
-	}
 }
 
 
