@@ -22,7 +22,7 @@ jobs:
     - name: Fix the packages
       run: |
         cd pkg/go-scheduler
-        go mod tody
+        go mod tidy
         cd ../..
     - name: Testing linting
       run: go vet ./... 
