@@ -43,7 +43,7 @@ jobs:
     - name: Build Image
       run: |
         echo "Building docker image"
-        echo ${{ env.DOCKER_USERNAME }}
+        echo ${{ env.DOCKER_USERNAME }} $DOCKER_USERNAME ${{ var.DOCKER_USERNAME }}
         TAG_NAME="1.0.0"
         docker build -t hamzausmani021/prometheus-database-exporter:$TAG_NAME
         
