@@ -45,10 +45,11 @@ jobs:
     - name: Build Image
       run: |
         echo "Building docker image"
-        echo ${{ env.DOCKER_USERNAME }} $DOCKER_USERNAME ${{ vars.DOCKER_USERNAME }}
+        echo ${{ vars.DOCKER_USERNAME }}
         TAG_NAME="1.0.0"
         git submodule update --init --recursive
         docker build -t hamzausmani021/prometheus-database-exporter:$TAG_NAME .
+        docker login -u ${{ vars.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }} 
         echo "Done bulding docker image and push"
 
   build-executable:
@@ -65,8 +66,7 @@ jobs:
       run: |
         echo "Building collector binary package"
         export GOOS=linux
-        echo ${{ vars.DOCKER_USERNAME }}
-        # go build -o ./bin/collector ./cmd/collector/
+        go build -o ./bin/collector ./cmd/collector/
         echo "Done bulding executable"    
     - name: Build Api
       run: |
