@@ -106,6 +106,11 @@ type ApplicationConfig struct {
 	DataSource []DataSourceConfig `yaml:"dataSourceConfig"`
 	// Queries to be executed to fetch metrics
 	Queries []map[string]interface{} `yaml:"queries"`
+	// Enable collector
+	EnableCollector bool `yaml:"enableCollector"`
+	// Enable API
+	EnableApi bool `yaml:"enableApi"`
+
 }
 
 func (cfg *ApplicationConfig) readConfigData(data []byte) {

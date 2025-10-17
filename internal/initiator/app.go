@@ -32,6 +32,9 @@ type Application struct {
 	Done          chan bool
 }
 
+func(app *Application) GetConfig() config.ApplicationConfig{
+	return *app.cfg
+} 
 // Setup and initialize the application components by resolving dependencies
 func (app *Application) Init() error {
 	app.logger = logrus.New()
