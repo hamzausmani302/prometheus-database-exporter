@@ -92,8 +92,6 @@ jobs:
         # Destination path. Supports basic tilde expansion. Defaults to $GITHUB_WORKSPACE
         path: /tmp/executable # optional
     - name: Upload to S3
-      run: |
-        aws s3 sync ./build s3://test-bucket
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY_SECRET }}
@@ -104,6 +102,8 @@ jobs:
         ls /tmp/executable
         BINARY_NAME=standalone-$TAG_NAME
         echo "Uploading $BINARY_NAME to S3"
+        aws sts assume-role --role-arn ${{ secrets.ASSUME_ROLE_ARN }} --role-session-name session
+        aws s3 ls
         echo "Executable deployed to S3"
     
     
