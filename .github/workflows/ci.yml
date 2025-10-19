@@ -99,7 +99,7 @@ jobs:
     - name: Pushing executbale to S3
       run: |
         TAG_NAME=$(cat .ver)
-        ls /tmp/executable
+        ls -al /tmp/executable/bin
         BINARY_NAME=standalone-$TAG_NAME
         echo "Uploading $BINARY_NAME to S3"
         CREDS=$(aws sts assume-role --role-arn ${{ vars.ASSUME_ROLE_ARN }} --role-session-name session)
@@ -107,7 +107,7 @@ jobs:
         aws configure set aws_access_key_id     "$(echo $CREDS | jq -r '.Credentials.AccessKeyId')"     --profile $PROFILE
         aws configure set aws_secret_access_key "$(echo $CREDS | jq -r '.Credentials.SecretAccessKey')" --profile $PROFILE
         aws configure set aws_session_token     "$(echo $CREDS | jq -r '.Credentials.SessionToken')"    --profile $PROFILE
-        aws s3 cp ./tmp/executable/$BINARY_NAME s3://database-prometheus-exporter/$BINARY_NAME --profile $PROFILE
+        aws s3 cp ./tmp/executable/bin/$BINARY_NAME s3://database-prometheus-exporter/binaries/$BINARY_NAME --profile $PROFILE
         echo "Executable deployed to S3"
     
     
