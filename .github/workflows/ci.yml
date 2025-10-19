@@ -5,12 +5,28 @@
 name: CI Workflow
 
 on:
-  workflow_dispatch:
+  # workflow_dispatch:
+    
+  push:
+    tags:
+      - '*.*.*'
 
 jobs:
-
+  verify-tags:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: match tags
+      run: |
+        TAG_NAME=$(cat .ver)
+        GITHUB_TAG=${GITHUB_REF#refs/tags/}
+        echo $GITHUB_TAG $TAG_NAME
+        if [ $TAG_NAME -ne GITHUB_TAG ]; then
+          exit 1
+        fi
   unit-testing:
     runs-on: ubuntu-latest
+    needs: [verify-tags]
     steps:
     - uses: actions/checkout@v4
     - name: Set up Go
@@ -30,28 +46,30 @@ jobs:
     - run: |
         echo "Testing Successful"
 
-  # build-docker-image:
-  #   runs-on: ubuntu-latest
-  #   needs: [unit-testing]
-  #   environment: PROD_ENV
-  #   steps:  
-  #   - name: Docker Setup Docker
-  #     uses: docker/setup-docker-action@v4.4.0
-  #   - uses: actions/checkout@v4
-  #   - name: Set up Go
-  #     uses: actions/setup-go@v4
-  #     with:
-  #       go-version: '1.22'
-  #   - name: Build Image
-  #     run: |
-  #       echo "Building docker image"
-  #       echo ${{ vars.DOCKER_USERNAME }}
-  #       TAG_NAME=$(cat .ver)
-  #       git submodule update --init --recursive
-  #       docker build -t hamzausmani021/prometheus-database-exporter:$TAG_NAME . --progress=plain --build-arg SERVICE=standalone
-  #       docker login -u ${{ vars.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }} 
-  #       docker push hamzausmani021/prometheus-database-exporter:$TAG_NAME
-  #       echo "Done bulding docker image and push"
+
+  
+  build-docker-image:
+    runs-on: ubuntu-latest
+    needs: [unit-testing]
+    environment: PROD_ENV
+    steps:  
+    - name: Docker Setup Docker
+      uses: docker/setup-docker-action@v4.4.0
+    - uses: actions/checkout@v4
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+    - name: Build Image
+      run: |
+        echo "Building docker image"
+        echo ${{ vars.DOCKER_USERNAME }}
+        TAG_NAME=$(cat .ver)
+        git submodule update --init --recursive
+        docker build -t hamzausmani021/prometheus-database-exporter:$TAG_NAME . --progress=plain --build-arg SERVICE=standalone
+        docker login -u ${{ vars.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }} 
+        docker push hamzausmani021/prometheus-database-exporter:$TAG_NAME
+        echo "Done bulding docker image and push"
 
   
   build-executable:
