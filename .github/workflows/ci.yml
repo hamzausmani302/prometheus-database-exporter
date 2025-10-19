@@ -107,7 +107,7 @@ jobs:
         aws configure set aws_access_key_id     "$(echo $CREDS | jq -r '.Credentials.AccessKeyId')"     --profile $PROFILE
         aws configure set aws_secret_access_key "$(echo $CREDS | jq -r '.Credentials.SecretAccessKey')" --profile $PROFILE
         aws configure set aws_session_token     "$(echo $CREDS | jq -r '.Credentials.SessionToken')"    --profile $PROFILE
-        aws s3 cp ./tmp/executable/$BINARY_NAME s3://database-prometheus-exporter/binaries/$BINARY_NAME --profile $PROFILE
+        aws s3 cp /tmp/executable/$BINARY_NAME s3://database-prometheus-exporter/binaries/$BINARY_NAME --profile $PROFILE
         echo "Executable deployed to S3"
     
     
