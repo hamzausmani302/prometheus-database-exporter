@@ -83,6 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-executable]
     steps:
+    - uses: actions/checkout@v4
     - name: Download a Build Artifact
       uses: actions/download-artifact@v5.0.0
       with:
