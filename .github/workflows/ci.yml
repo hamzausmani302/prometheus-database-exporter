@@ -101,8 +101,8 @@ jobs:
         ls /tmp/executable
         BINARY_NAME=standalone-$TAG_NAME
         echo "Uploading $BINARY_NAME to S3"
-        aws sts assume-role --role-arn ${{ secrets.ASSUME_ROLE_ARN }} --role-session-name session
-        aws s3 ls
+        aws sts assume-role --role-arn ${{ vars.ASSUME_ROLE_ARN }} --role-session-name session
+        aws s3 cp ./tmp/executable/$BINARY_NAME s3://database-prometheus-exporter/$BINARY_NAME
         echo "Executable deployed to S3"
     
     
