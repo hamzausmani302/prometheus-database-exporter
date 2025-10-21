@@ -45,9 +45,12 @@ jobs:
       run: go test  ./...
     - run: |
         echo "Testing Successful"
-
-
-  
+  integration-testing:
+    needs: [unit-testing]
+    uses: ./.github/workflows/testing.yaml
+    with:
+      branch: ${{ github.ref_name }} 
+    
   build-docker-image:
     runs-on: ubuntu-latest
     needs: [unit-testing]
