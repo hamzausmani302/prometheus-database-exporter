@@ -33,7 +33,8 @@ func NewRedisCache(options RedisConnectionSettings) *RedisCache {
 
 	ctx := context.Background()
 	if _, err := rdb.Ping(ctx).Result(); err != nil {
-		panic(err)
+		fmt.Println(err)
+		return nil
 	}
 
 	return &RedisCache{
@@ -48,8 +49,6 @@ func (r *RedisCache) GetCacheType() string {
 
 func (r *RedisCache) Get(key string) ([]byte, error) {
 	val, err := r.client.Get(r.ctx, key).Bytes()
-	fmt.Println("data got =", string(val))
-
 	if err == redis.Nil {
 		return nil, nil // key not found
 	}
