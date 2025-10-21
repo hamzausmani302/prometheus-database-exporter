@@ -1,0 +1,21 @@
+
+name: Integration tests
+on:
+  workflow_dispatch:
+    
+  # push:
+  #   tags:
+  #     - '*.*.*'
+
+jobs:
+  integration_test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Redis
+        uses: zhulik/redis-action@1.1.0
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run integration tests
+        run: |
+          go test test/integration/...
+          
