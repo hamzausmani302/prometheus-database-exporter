@@ -23,5 +23,6 @@ jobs:
         run: |
           git submodule update --init --recursive
           go mod tidy
-          go test test/integration/...
+          ls -al
+          go test ./test/integration/...
           
