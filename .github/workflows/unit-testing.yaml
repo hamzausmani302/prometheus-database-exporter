@@ -1,6 +1,7 @@
 name: Unit Testing
 on:
     workflow_dispatch:
+    workflow_call:
 
 jobs:
     unit-testing:
