@@ -1,4 +1,3 @@
-
 # This workflow will build a golang project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 
@@ -6,133 +5,128 @@ name: CI Workflow
 
 on:
   # workflow_dispatch:
-    
+
   push:
     tags:
-      - '*.*.*'
+      - "*.*.*"
 
 jobs:
   verify-tags:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: match tags
-      run: |
-        TAG_NAME=$(cat .ver)
-        GITHUB_TAG=${GITHUB_REF#refs/tags/}
-        echo $GITHUB_TAG $TAG_NAME
-        if [ $TAG_NAME -ne GITHUB_TAG ]; then
-          exit 1
-        fi
+      - uses: actions/checkout@v4
+      - name: match tags
+        run: |
+          TAG_NAME=$(cat .ver)
+          GITHUB_TAG=${GITHUB_REF#refs/tags/}
+          echo $GITHUB_TAG $TAG_NAME
+          if [ $TAG_NAME -ne GITHUB_TAG ]; then
+            exit 1
+          fi
   unit-testing:
     runs-on: ubuntu-latest
     needs: [verify-tags]
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.22'
-    - name: Starting unit testing
-      run: |
-        echo "Starting unit test"
-    - name: Fix the packages
-      run: |
-        git submodule update --init --recursive
-    - name: Testing linting
-      run: go vet ./... 
-    - name: Unit test
-      run: go test  ./...
-    - name: Golangci-lint
-      uses: golangci/golangci-lint-action@v6.0.1
-    - run: |
-        echo "Testing Successful"
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.22"
+      - name: Starting unit testing
+        run: |
+          echo "Starting unit test"
+      - name: Fix the packages
+        run: |
+          git submodule update --init --recursive
+      - name: Testing linting
+        run: go vet ./...
+      - name: Unit test
+        run: go test  ./...
+      - name: Golangci-lint
+        uses: golangci/golangci-lint-action@v6.0.1
+      - run: |
+          echo "Testing Successful"
   integration-testing:
     needs: [unit-testing]
-    uses: ./.github/workflows/testing.yaml
+    uses: ./.github/workflows/integration-testing.yaml
     with:
-      branch: ${{ github.ref_name }} 
-    
+      branch: ${{ github.ref_name }}
+
   build-docker-image:
     runs-on: ubuntu-latest
     needs: [integration-testing]
     environment: PROD_ENV
-    steps:  
-    - name: Docker Setup Docker
-      uses: docker/setup-docker-action@v4.4.0
-    - uses: actions/checkout@v4
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.22'
-    - name: Build Image
-      run: |
-        echo "Building docker image"
-        echo ${{ vars.DOCKER_USERNAME }}
-        TAG_NAME=$(cat .ver)
-        git submodule update --init --recursive
-        docker build -t hamzausmani021/prometheus-database-exporter:$TAG_NAME . --progress=plain --build-arg SERVICE=standalone
-        docker login -u ${{ vars.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }} 
-        docker push hamzausmani021/prometheus-database-exporter:$TAG_NAME
-        echo "Done bulding docker image and push"
+    steps:
+      - name: Docker Setup Docker
+        uses: docker/setup-docker-action@v4.4.0
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.22"
+      - name: Build Image
+        run: |
+          echo "Building docker image"
+          echo ${{ vars.DOCKER_USERNAME }}
+          TAG_NAME=$(cat .ver)
+          git submodule update --init --recursive
+          docker build -t hamzausmani021/prometheus-database-exporter:$TAG_NAME . --progress=plain --build-arg SERVICE=standalone
+          docker login -u ${{ vars.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }} 
+          docker push hamzausmani021/prometheus-database-exporter:$TAG_NAME
+          echo "Done bulding docker image and push"
 
-  
   build-executable:
     runs-on: ubuntu-latest
     needs: [integration-testing]
-    steps:  
-    - uses: actions/checkout@v4
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.22'
-    - run: git submodule update --init --recursive
-    - name: Build Exporter
-      run: |
-        echo "Building collector binary package"
-        TAG_NAME=$(cat .ver)
-        export GOOS=linux
-        go build -o ./bin/standalone-$TAG_NAME ./cmd/standalone/
-        echo "Done bulding executable" 
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v4.6.2
-      with:
-        # Artifact name
-        name: artifact-build
-        # A file, directory or wildcard pattern that describes what to upload
-        path: ./bin
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.22"
+      - run: git submodule update --init --recursive
+      - name: Build Exporter
+        run: |
+          echo "Building collector binary package"
+          TAG_NAME=$(cat .ver)
+          export GOOS=linux
+          go build -o ./bin/standalone-$TAG_NAME ./cmd/standalone/
+          echo "Done bulding executable"
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          # Artifact name
+          name: artifact-build
+          # A file, directory or wildcard pattern that describes what to upload
+          path: ./bin
 
   push-executable-to-s3:
     runs-on: ubuntu-latest
     needs: [build-executable]
     environment: PROD_ENV
     env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY_SECRET }}
-        AWS_DEFAULT_REGION: ${{ vars.AWS_REGION }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY_SECRET }}
+      AWS_DEFAULT_REGION: ${{ vars.AWS_REGION }}
     steps:
-    - uses: actions/checkout@v4
-    - name: Download a Build Artifact
-      uses: actions/download-artifact@v5.0.0
-      with:
-        # Name of the artifact to download. If unspecified, all artifacts for the run are downloaded.
-        name: artifact-build 
-        # Destination path. Supports basic tilde expansion. Defaults to $GITHUB_WORKSPACE
-        path: /tmp/executable # optional
-    - name: Pushing executbale to S3
-      run: |
-        TAG_NAME=$(cat .ver)
-        ls -al /tmp/executable
-        BINARY_NAME=standalone-$TAG_NAME
-        echo "Uploading $BINARY_NAME to S3"
-        CREDS=$(aws sts assume-role --role-arn ${{ vars.ASSUME_ROLE_ARN }} --role-session-name session)
-        PROFILE="assumed-role"
-        aws configure set aws_access_key_id     "$(echo $CREDS | jq -r '.Credentials.AccessKeyId')"     --profile $PROFILE
-        aws configure set aws_secret_access_key "$(echo $CREDS | jq -r '.Credentials.SecretAccessKey')" --profile $PROFILE
-        aws configure set aws_session_token     "$(echo $CREDS | jq -r '.Credentials.SessionToken')"    --profile $PROFILE
-        aws s3 cp /tmp/executable/$BINARY_NAME s3://database-prometheus-exporter/binaries/$BINARY_NAME --profile $PROFILE
-        echo "Executable deployed to S3"
-    
-    
-  
-        
+      - uses: actions/checkout@v4
+      - name: Download a Build Artifact
+        uses: actions/download-artifact@v5.0.0
+        with:
+          # Name of the artifact to download. If unspecified, all artifacts for the run are downloaded.
+          name: artifact-build
+          # Destination path. Supports basic tilde expansion. Defaults to $GITHUB_WORKSPACE
+          path: /tmp/executable # optional
+      - name: Pushing executbale to S3
+        run: |
+          TAG_NAME=$(cat .ver)
+          ls -al /tmp/executable
+          BINARY_NAME=standalone-$TAG_NAME
+          echo "Uploading $BINARY_NAME to S3"
+          CREDS=$(aws sts assume-role --role-arn ${{ vars.ASSUME_ROLE_ARN }} --role-session-name session)
+          PROFILE="assumed-role"
+          aws configure set aws_access_key_id     "$(echo $CREDS | jq -r '.Credentials.AccessKeyId')"     --profile $PROFILE
+          aws configure set aws_secret_access_key "$(echo $CREDS | jq -r '.Credentials.SecretAccessKey')" --profile $PROFILE
+          aws configure set aws_session_token     "$(echo $CREDS | jq -r '.Credentials.SessionToken')"    --profile $PROFILE
+          aws s3 cp /tmp/executable/$BINARY_NAME s3://database-prometheus-exporter/binaries/$BINARY_NAME --profile $PROFILE
+          echo "Executable deployed to S3"

@@ -4,8 +4,10 @@ FROM golang:1.24.7-bookworm AS builder
 WORKDIR /app
 
 # Build-time argument: "api" or "collector"
-ARG SERVICE=api
-ENV SERVICE=${SERVICE}
+ARG PORT=8080
+ENV SERVICE=exporter
+ENV PORT=${PORT}
+
 COPY pkg pkg
 # Copy only what's needed first
 COPY go.mod  ./
@@ -22,8 +24,7 @@ FROM debian:bookworm-slim AS runner
 WORKDIR /app
 
 # Copy the single binary
-ARG SERVICE=api
-ENV SERVICE=${SERVICE}
+ENV SERVICE=exporter
 COPY --from=builder /app/bin/${SERVICE} ./${SERVICE}
 
 # Copy config if needed
@@ -31,7 +32,7 @@ COPY config ./config
 COPY .ver .ver
 
 # Optional: expose ports (only if the API needs it)
-EXPOSE 8080
+EXPOSE $PORT
 
 # Run the chosen service
 ENTRYPOINT ["sh", "-c", "./${SERVICE}"]

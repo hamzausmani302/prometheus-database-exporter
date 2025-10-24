@@ -4,6 +4,7 @@ go 1.24.7
 
 require (
 	github.com/aleksiumish/in-memory-cache v0.0.0-20221207194228-7a96563e9c52
+	github.com/caarlos0/env/v11 v11.3.1
 	github.com/go-gota/gota v0.12.0
 	github.com/lib/pq v1.10.9
 	github.com/prometheus/client_golang v1.23.2

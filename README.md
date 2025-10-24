@@ -91,17 +91,21 @@ This project is open source under the [MIT License](LICENSE).
 1. Simplify collector and API startups (Push startups in application strict itself in cmd) ✅
 2. In case of non distibuted store, allow support for standalone exporter with both (collector/api)✅
 3. Add cmd for standalone setup ✅
-4. Create test cases for exporeter to test all functionality
-5. Create CI pipelines to build to following
-   1. Push Image to docker on tag
-   2. Push Binary to s3 bucket
-6. Create documentation for the exporter
-7. Add CLI tool support with few features
-   1. Current queries in redis
-   2. Print result from redis
-   3. Print result of exporter for te query or all
+4. Create test cases for exporeter to test all functionality ✅
+5. Create CI pipelines to build to following ✅
+   1. Push Image to docker on tag ✅
+   2. Push Binary to s3 bucket ✅
+6. Create integration test/ e2e tests
+7. Create documentation for the exporter
+8. Add husky pre-commit checks to ensure best practices
+9. Add examples
+10. Add CLI tool support with few features
+11. Current queries in redis
+12. Print result from redis
+13. Print result of exporter for the query or all
 
-# Lint 
+# Lint
+
 bash`golangci-lint run`
 
 ## Contact
