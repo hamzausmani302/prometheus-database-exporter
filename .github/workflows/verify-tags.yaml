@@ -19,6 +19,7 @@ jobs:
               run: |
                   TAG_NAME=$(cat .ver)
                   GITHUB_TAG=${{ github.event.inputs.tagName }}
+                  echo "tag = $GITHUB_TAG;"
                   echo $GITHUB_TAG $TAG_NAME
                   if [ $TAG_NAME -ne GITHUB_TAG ]; then
                     exit 1
