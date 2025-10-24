@@ -1,0 +1,30 @@
+name: Build and push docker image
+on:
+    workflow_call:
+        inputs:
+            branch:
+                required: false
+                type: string
+
+jobs:
+    build-docker-image:
+        runs-on: ubuntu-latest
+        environment: PROD_ENV
+        steps:
+            - name: Docker Setup Docker
+              uses: docker/setup-docker-action@v4.4.0
+            - uses: actions/checkout@v4
+            - name: Set up Go
+              uses: actions/setup-go@v4
+              with:
+                  go-version: "1.22"
+            - name: Build Image
+              run: |
+                  echo "Building docker image"
+                  echo ${{ vars.DOCKER_USERNAME }}
+                  TAG_NAME=$(cat .ver)
+                  git submodule update --init --recursive
+                  docker build -t hamzausmani021/prometheus-database-exporter:$TAG_NAME . --progress=plain
+                  docker login -u ${{ vars.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }} 
+                  docker push hamzausmani021/prometheus-database-exporter:$TAG_NAME
+                  echo "Done bulding docker image and push"
