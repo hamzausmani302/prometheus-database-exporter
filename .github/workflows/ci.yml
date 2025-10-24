@@ -45,7 +45,7 @@ jobs:
           echo ${{ vars.DOCKER_USERNAME }}
           TAG_NAME=$(cat .ver)
           git submodule update --init --recursive
-          docker build -t hamzausmani021/prometheus-database-exporter:$TAG_NAME . --progress=plain --build-arg SERVICE=standalone
+          docker build -t hamzausmani021/prometheus-database-exporter:$TAG_NAME . --progress=plain
           docker login -u ${{ vars.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }} 
           docker push hamzausmani021/prometheus-database-exporter:$TAG_NAME
           echo "Done bulding docker image and push"
