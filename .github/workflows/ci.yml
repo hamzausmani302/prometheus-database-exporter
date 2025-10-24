@@ -60,7 +60,7 @@ jobs:
         run: |
           TAG_NAME=$(cat .ver)
           ls -al /tmp/executable
-          BINARY_NAME=standalone-$TAG_NAME
+          BINARY_NAME=exporter-linux-$TAG_NAME
           echo "Uploading $BINARY_NAME to S3"
           CREDS=$(aws sts assume-role --role-arn ${{ vars.ASSUME_ROLE_ARN }} --role-session-name session)
           PROFILE="assumed-role"

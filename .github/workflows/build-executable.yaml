@@ -22,7 +22,7 @@ jobs:
                   echo "Building collector binary package"
                   TAG_NAME=$(cat .ver)
                   export GOOS=linux
-                  go build -o ./bin/standalone-$TAG_NAME ./cmd/standalone/
+                  go build -o ./bin/exporter-linux-$TAG_NAME ./cmd/exporter/
                   echo "Done bulding executable"
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v4.6.2
