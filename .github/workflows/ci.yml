@@ -43,6 +43,8 @@ jobs:
       run: go vet ./... 
     - name: Unit test
       run: go test  ./...
+    - name: Golangci-lint
+      uses: golangci/golangci-lint-action@v6.0.1
     - run: |
         echo "Testing Successful"
   integration-testing:
