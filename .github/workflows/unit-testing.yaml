@@ -2,12 +2,18 @@ name: Unit Testing
 on:
     workflow_dispatch:
     workflow_call:
+        inputs:
+            ref:
+                required: true
+                type: string
 
 jobs:
     unit-testing:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
+              with:
+                  ref: ${{ inputs.ref }}
             - name: Set up Go
               uses: actions/setup-go@v4
               with:

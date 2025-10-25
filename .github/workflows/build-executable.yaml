@@ -3,7 +3,7 @@ name: Build Exporter Executable
 on:
     workflow_call:
         inputs:
-            branch:
+            ref:
                 required: false
                 type: string
 
@@ -12,6 +12,8 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
+              with:
+                  ref: ${{ inputs.ref }}
             - name: Set up Go
               uses: actions/setup-go@v4
               with:

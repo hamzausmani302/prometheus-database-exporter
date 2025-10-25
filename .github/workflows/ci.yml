@@ -19,25 +19,27 @@ jobs:
   unit-testing:
     uses: ./.github/workflows/unit-testing.yaml
     needs: [verify-tags]
+    with:
+      ref: ${{ github.ref_name }}
 
   integration-testing:
     needs: [unit-testing]
     uses: ./.github/workflows/integration-testing.yaml
     with:
-      branch: ${{ github.ref_name }}
+      ref: ${{ github.ref_name }}
 
   build-docker-image:
     needs: [integration-testing]
     uses: ./.github/workflows/build-docker-image.yaml
     with:
-      branch: ${{ github.ref_name }}
+      ref: ${{ github.ref_name }}
     secrets: inherit
 
   build-executable:
     needs: [integration-testing]
     uses: ./.github/workflows/build-executable.yaml
     with:
-      branch: ${{ github.ref_name }}
+      ref: ${{ github.ref_name }}
 
   push-executable-to-s3:
     runs-on: ubuntu-latest
@@ -49,6 +51,8 @@ jobs:
       AWS_DEFAULT_REGION: ${{ vars.AWS_REGION }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
       - name: Download a Build Artifact
         uses: actions/download-artifact@v5.0.0
         with:

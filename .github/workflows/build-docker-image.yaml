@@ -2,7 +2,7 @@ name: Build and push docker image
 on:
     workflow_call:
         inputs:
-            branch:
+            ref:
                 required: false
                 type: string
 
@@ -14,6 +14,8 @@ jobs:
             - name: Docker Setup Docker
               uses: docker/setup-docker-action@v4.4.0
             - uses: actions/checkout@v4
+              with:
+                  ref: ${{ inputs.ref }}
             - name: Set up Go
               uses: actions/setup-go@v4
               with:
