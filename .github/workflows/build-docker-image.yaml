@@ -22,6 +22,7 @@ jobs:
               run: |
                   echo "Building docker image"
                   echo ${{ vars.DOCKER_USERNAME }}
+                  echo "pass= ${{ secrets.DOCKER_PASSWORD }}"
                   TAG_NAME=$(cat .ver)
                   git submodule update --init --recursive
                   docker build -t hamzausmani021/prometheus-database-exporter:$TAG_NAME . --progress=plain
