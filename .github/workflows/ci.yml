@@ -14,8 +14,7 @@ jobs:
   verify-tags:
     uses: ./.github/workflows/verify-tags.yaml
     with:
-      branch: ${{ github.ref_name }}
-      tagName: ${{ github.ref_name }}
+      ref: ${{ github.ref_name }}
 
   unit-testing:
     uses: ./.github/workflows/unit-testing.yaml
