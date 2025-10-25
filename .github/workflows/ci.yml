@@ -32,6 +32,7 @@ jobs:
     uses: ./.github/workflows/build-docker-image.yaml
     with:
       branch: ${{ github.ref_name }}
+    secrets: inherit
 
   build-executable:
     needs: [integration-testing]
