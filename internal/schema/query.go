@@ -60,11 +60,16 @@ func (query *Query) GenerateHash() {
 	payload := ""
 	for _, label := range query.Labels {
 		payload += label.Name
+		payload += label.ColumnName
+		payload += label.StaticValue
 	}
 	for _, metric := range query.Metrics {
 		payload += metric.Name
+		payload += metric.Type
 	}
-	query.hash = utils.Hash(query.Name, query.Query, payload)
+	payload += query.Query
+	payload += query.Name
+	query.hash = utils.Hash(payload)
 }
 
 func (query *Query) GetDataSource() *datasource.IDataSource {

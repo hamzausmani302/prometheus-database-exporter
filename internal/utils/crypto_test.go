@@ -14,4 +14,9 @@ func TestHashingFunction(t *testing.T) {
 	if result == result3 {
 		t.Error("expected the hashes to be different but are same")
 	}
+	result4 := Hash("test-metric1", "select * from test_table", "test_label1test_label3")
+	if result3 == result4 {
+		t.Errorf("expected the hases to be different but are same %s", result4)
+	}
+
 }

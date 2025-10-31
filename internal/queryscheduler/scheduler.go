@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/algorythma/go-scheduler"
+	"github.com/algorythma/go-scheduler/task"
 	"github.com/hamzausmani302/prometheus-database-exporter/config"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/datasource"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/schema"
@@ -48,12 +49,16 @@ func (q *QueryScheduler) Init() error {
 	q.logger.Infof("total number of Queries : %d", len(q.Queries))
 	for _, query := range q.Queries {
 		// assiging the schduled task id hash
-		if id, err := q.scheduler.RunEvery(time.Duration(query.QueryRefreshTime)*time.Second, q.ExecuteTask, query); err != nil {
+		var id task.ID
+		var err error
+		query.GenerateHash()
+		if id, err = q.scheduler.RunEvery(time.Duration(query.QueryRefreshTime)*time.Second, q.ExecuteTask, query); err != nil {
 			q.logger.Errorf("Error while running task with id = %s", id)
 			q.logger.Debugf("Error while running task with id = %s | query = %s | %d", query.GetHash(), query.Query, query.QueryRefreshTime)
 			return err
 		}
-		query.GenerateHash()
+		q.logger.Info("ID " , query.GetHash())
+		
 	}
 	return nil
 }
@@ -74,7 +79,7 @@ func (q *QueryScheduler) Stop() error {
 // The actual task workflow will be written here
 func (q *QueryScheduler) ExecuteTask(query *schema.Query) error {
 	now := time.DateTime
-	q.logger.Infof("Executing task for %s %s %s | %d", query.Name, query.Query, now, query.QueryRefreshTime)
+	q.logger.Infof("Executing task for %s %s %s %s | %d",query.GetHash(), query.Name, query.Query, now, query.QueryRefreshTime)
 	ds := *query.GetDataSource()
 	// get data from database
 	if err := ds.Connect(); err != nil {

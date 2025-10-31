@@ -20,10 +20,10 @@ func main() {
 		rootLogger.Panic("Failed to initialize application", err)
 		return
 	}
-	if app.GetConfig().EnableCollector {
+	if app.IsCollectorEnabled() {
 		go app.StartCollector()
 	}
-	if app.GetConfig().EnableApi {
+	if app.IsApiEnabled() {
 		go app.StartApi()
 	}
 	

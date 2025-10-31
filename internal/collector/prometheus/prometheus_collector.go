@@ -47,13 +47,14 @@ func (p PrometheusGoCollector) Collect(ch chan<- prometheus.Metric) {
 	if err != nil {
 		p.Logger.Warn(err)
 	}
-	descLabels := []string{}
 	for _, m := range metrics {
+		descLabels := []string{}
 		labels := []string{}
 		for _, label := range m.Labels {
 			labels = append(labels, label.Value)
 			descLabels = append(descLabels, label.Name)
 		}
+		fmt.Println("ld", labels, descLabels)
 		desc := prometheus.NewDesc(m.Name, m.Help, descLabels, nil)
 		// add support for counter  nad everything else via a factory function
 		// by supplying the channel and let the factory handle putting data in channel
