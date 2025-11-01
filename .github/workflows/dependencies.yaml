@@ -40,5 +40,5 @@ jobs:
       run: |
         git submodule update --init --recursive
         go mod tidy
-        go test -tags=integration test/integration
+        go test -tags=integration ./test/integration/
     
