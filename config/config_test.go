@@ -54,7 +54,7 @@ queries:
         column: total_active_rides`
 
 	var appConfig ApplicationConfig
-	appConfig.readConfigData([]byte(manifest))
+	appConfig.ReadConfigData([]byte(manifest))
 	if appConfig.Store.StoreType != "local" {
 		t.Errorf("Expected: %s  Got: %s ", "local", appConfig.Store.StoreType)
 	}
@@ -114,7 +114,7 @@ queries:
         column: total_active_rides`
 
 	var appConfig ApplicationConfig
-	appConfig.readConfigData([]byte(manifest))
+	appConfig.ReadConfigData([]byte(manifest))
   os.Setenv("STORE_TYPE", "TestStore")
   os.Setenv("PORT", "8000")
   ReadEnvVars(&appConfig)

@@ -15,14 +15,16 @@ import (
 // Test simple memory caching Store
 // Test Redis Cache connectivity
 // The known port and host in Github actions
-func TestRedisStore(t *testing.T) {
+
+func TestCacheStore(t *testing.T) {
+	
 	stores := []config.StoreConfig{
 		config.StoreConfig{
 			StoreType: "redis",
 			Metadata: config.StoreConfigMetadataConfig{
 				ConnectionDetails: map[string]string{
-					"Host": "localhost",
-					"Port": "6379",
+					"host": "localhost",
+					"port": "6379",
 				},
 			},
 		},

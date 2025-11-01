@@ -120,7 +120,7 @@ type ApplicationConfig struct {
 	ConfigFilePath string `env:"CONFIG_FILE_PATH" envDefault:"config/config.yaml"`
 }
 
-func (cfg *ApplicationConfig) readConfigData(data []byte) {
+func (cfg *ApplicationConfig) ReadConfigData(data []byte) {
 	err := yaml.Unmarshal(data, &cfg)
 	if err != nil {
 		log.Fatalf("Error unmarshaling YAML: %v", err)
@@ -148,7 +148,7 @@ func GetConfig(env string, logger *logrus.Logger) ApplicationConfig {
 			logger.Fatalf("Error reading file: %v", err)
 			panic("There is a problem reading the file...")
 		}
-		applicationConfig.readConfigData(content)
+		applicationConfig.ReadConfigData(content)
 		ReadEnvVars(&applicationConfig)
 		appCfg = &applicationConfig
 	

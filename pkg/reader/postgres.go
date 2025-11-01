@@ -84,7 +84,7 @@ func (reader *PostgresReader) Connect() (*sql.DB, error) {
 	conn_string := reader.ConnectionString
 	if conn_string == "" {
 		reader.Logger.Warn("connection string is empty ,so generating one from the info provided")
-		conn_string = fmt.Sprintf("postgres://%s:%s@%s:%d/id3_dashboard", reader.Host, reader.Password, reader.Host, reader.Port)
+		conn_string = fmt.Sprintf("postgres://%s:%s@%s:%d?sslmode=disable", reader.Username, reader.Password, reader.Host, reader.Port)
 	}
 	reader.Logger.Info("conn_string - ", conn_string)
 	reader.ctx = context.Background()
@@ -92,6 +92,11 @@ func (reader *PostgresReader) Connect() (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = conn.Ping()
+    if err != nil {
+        log.Fatalf("Failed to connect to the database: %v", err)
+    }
+
 	reader.conn = conn
 	return conn, nil
 }
