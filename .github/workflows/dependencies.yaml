@@ -1,0 +1,42 @@
+name: Integration Testing
+on:
+  workflow_dispatch:
+    inputs:
+      ref: 
+        required: true
+        description: the commit to run the pipeline on
+
+jobs:
+  # Label of the container job
+  container-job:
+    # Containers must run in Linux based operating systems
+    runs-on: ubuntu-latest
+    
+    # Service containers to run with `container-job`
+    services:
+      # Label used to access the service container
+      redis:
+        # Docker Hub image
+        image: redis
+        ports: 
+          - 6379:6379
+      db:
+        env:
+          POSTGRES_PASSWORD: password
+        image: postgres
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.ref }}
+    - name: Setup go
+      uses: actions/setup-go@v6.0.0
+      with:
+        # The Go version to download (if necessary) and use. Supports semver spec and ranges. Be sure to enclose this option in single quotation marks.
+        go-version: "1.22" # optional
+    - name: Test integration
+      env:
+        CONFIG_FILE_PATH: "../../config/config.example.yaml"
+      run: |
+        go test -tags=integration test/integration
+    
