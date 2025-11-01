@@ -38,5 +38,7 @@ jobs:
       env:
         CONFIG_FILE_PATH: "../../config/config.example.yaml"
       run: |
+        git submodule update --init --recursive
+        go mod tidy
         go test -tags=integration test/integration
     
