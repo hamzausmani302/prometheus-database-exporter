@@ -18,8 +18,8 @@ jobs:
   container-job:
     # Containers must run in Linux based operating systems
     runs-on: ubuntu-latest
-    container:
-     image: postgres
+    # container:
+    #  image: postgres
     # Service containers to run with `container-job`
     services:
       # Label used to access the service container
@@ -51,25 +51,25 @@ jobs:
         # The Go version to download (if necessary) and use. Supports semver spec and ranges. Be sure to enclose this option in single quotation marks.
         go-version: "1.24" # optional
     
-    - name: Wait for Postgres (extra safety)
-      run: |
-        echo "Waiting for Postgres service to be ready..."
-        for i in {1..10}; do
-          if pg_isready -h db -U postgres -d postgres; then
-            echo "✅ Postgres is ready!"
-            exit 0
-          fi
-          echo "Waiting..."
-          sleep 3
-        done
-        echo "❌ Postgres did not become ready in time" >&2
-        exit 1
+    # - name: Wait for Postgres (extra safety)
+    #   run: |
+    #     echo "Waiting for Postgres service to be ready..."
+    #     for i in {1..10}; do
+    #       if pg_isready -h db -U postgres -d postgres; then
+    #         echo "✅ Postgres is ready!"
+    #         exit 0
+    #       fi
+    #       echo "Waiting..."
+    #       sleep 3
+    #     done
+    #     echo "❌ Postgres did not become ready in time" >&2
+    #     exit 1
     
     - name: Init database
       env:
         PGPASSWORD: password
       run: |
-        psql -U postgres -h db -p 5432 -c "CREATE DATABASE exporter"
+        psql -U postgres -h 0.0.0.0 -p 5432 -c "CREATE DATABASE exporter"
         psql -l
         
     # - name: Test integration
