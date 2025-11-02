@@ -1,0 +1,85 @@
+name: End To End Test Exporter
+on:
+  workflow_dispatch:
+    inputs:
+      ref: 
+        type: string
+        required: true
+        description: the commit to run the pipeline on
+  workflow_call:
+    inputs:
+      ref: 
+        type: string
+        required: true
+        description: the commit to run the pipeline on
+
+jobs:
+  # Label of the container job
+  container-job:
+    # Containers must run in Linux based operating systems
+    runs-on: ubuntu-latest
+    container:
+     image: postgres
+    # Service containers to run with `container-job`
+    services:
+      # Label used to access the service container
+      redis:
+        # Docker Hub image
+        image: redis
+        ports: 
+          - 6379:6379
+      db:
+        env:
+          POSTGRES_PASSWORD: password
+        image: postgres
+        ports: 
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.ref }}
+    - name: Setup go
+      uses: actions/setup-go@v6.0.0
+      with:
+        # The Go version to download (if necessary) and use. Supports semver spec and ranges. Be sure to enclose this option in single quotation marks.
+        go-version: "1.24" # optional
+    
+    - name: Wait for Postgres (extra safety)
+      run: |
+        echo "Waiting for Postgres service to be ready..."
+        for i in {1..10}; do
+          if pg_isready -h db -U postgres -d postgres; then
+            echo "✅ Postgres is ready!"
+            exit 0
+          fi
+          echo "Waiting..."
+          sleep 3
+        done
+        echo "❌ Postgres did not become ready in time" >&2
+        exit 1
+    
+    - name: Init database
+      env:
+        PGUSERNAME: postgres
+        PGPASSWORD: password
+        DB_NAME: exporter
+      run: |
+        psql -U $PGUSERNAME -h db -p 5432 -c "CREATE DATABASE $DB_NAME"
+        psql -U $PGUSERNAME -h db -p 5432 -l
+        psql -U $PGUSERNAME -h db -p 5432 -d $DB_NAME -a -f ./test/sql/datasource-test/setup-dummy-data-postgres.sql
+        
+    # - name: Test integration
+    #   env:
+    #     CONFIG_FILE_PATH: "../../config/config.example.yaml"
+    #   run: |
+    #     git submodule update --init --recursive
+    #     go mod tidy
+    #     go test -tags=integration ./test/integration/
+        

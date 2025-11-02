@@ -3,13 +3,6 @@ on:
   workflow_dispatch:
     inputs:
       ref: 
-        type: string
-        required: true
-        description: the commit to run the pipeline on
-  workflow_call:
-    inputs:
-      ref: 
-        type: string
         required: true
         description: the commit to run the pipeline on
 
