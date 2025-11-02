@@ -75,11 +75,11 @@ jobs:
         psql -U $PGUSERNAME -h db -p 5432 -l
         psql -U $PGUSERNAME -h db -p 5432 -d $DB_NAME -a -f ./test/sql/datasource-test/setup-dummy-data-postgres.sql
         
-    # - name: Test integration
-    #   env:
-    #     CONFIG_FILE_PATH: "../../config/config.example.yaml"
-    #   run: |
-    #     git submodule update --init --recursive
-    #     go mod tidy
-    #     go test -tags=integration ./test/integration/
+    - name: Test integration
+      env:
+        CONFIG_FILE_PATH: "config/config.example.yaml"
+      run: |
+        git submodule update --init --recursive
+        go mod tidy
+        go test -tags=e2e ./test/e2e/
         
