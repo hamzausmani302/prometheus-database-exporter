@@ -8,7 +8,7 @@ storeConfig:
   type: "redis" # enum [Local, Redis] can add more implementations later by implemnting the DataStore interface
   metadata:
     connectionDetails:
-      host: localhost
+      host: redis
       port: 6379
       password: TiyNzDdjvY
 collectorConfig:
@@ -26,7 +26,7 @@ dataSourceConfig:
         port: 5432
         username: postgres
         password: password
-        connectionString: "postgresql://postgres:password@localhost:5432/id3_dashboard?sslmode=disable"
+        connectionString: "postgresql://postgres:password@postgres:5432/id3_dashboard?sslmode=disable"
 
 queries:
   - name: taxi_rides
