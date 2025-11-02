@@ -67,10 +67,13 @@ jobs:
     
     - name: Init database
       env:
+        PGUSERNAME: postgres
         PGPASSWORD: password
+        DB_NAME: exporter
       run: |
-        psql -U postgres -h db -p 5432 -c "CREATE DATABASE exporter"
-        psql -U postgres -h db -p 5432 -l
+        psql -U $PGUSERNAME -h db -p 5432 -c "CREATE DATABASE $DB_NAME"
+        psql -U $PGUSERNAME -h db -p 5432 -l
+        psql -U $PGUSERNAME -d $DB_NAME -a -f ./test/sql/datasource-test/setup-dummy-data-postgres.sql
         
     # - name: Test integration
     #   env:
