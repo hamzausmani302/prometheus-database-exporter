@@ -69,7 +69,7 @@ jobs:
       env:
         PGPASSWORD: password
       run: |
-        psql -U postgres -h 0.0.0.0 -p 5433 -c "CREATE DATABASE exporter"
+        psql -U postgres -h localhost -p 5433 -c "CREATE DATABASE exporter"
         psql -l
         
     # - name: Test integration
