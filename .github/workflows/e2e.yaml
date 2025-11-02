@@ -73,7 +73,7 @@ jobs:
       run: |
         psql -U $PGUSERNAME -h db -p 5432 -c "CREATE DATABASE $DB_NAME"
         psql -U $PGUSERNAME -h db -p 5432 -l
-        psql -U $PGUSERNAME -d $DB_NAME -a -f ./test/sql/datasource-test/setup-dummy-data-postgres.sql
+        psql -U $PGUSERNAME -h db -p 5432 -d $DB_NAME -a -f ./test/sql/datasource-test/setup-dummy-data-postgres.sql
         
     # - name: Test integration
     #   env:
