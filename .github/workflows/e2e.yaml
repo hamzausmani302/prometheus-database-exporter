@@ -44,6 +44,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
+        submodules: true
         ref: ${{ inputs.ref }}
     - name: Setup go
       uses: actions/setup-go@v6.0.0
