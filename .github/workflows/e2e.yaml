@@ -46,7 +46,7 @@ jobs:
       uses: akanieski/setup-postgres-cli@v0.1.2
       with:
         # Actions to take
-        commands: psql -U postgres -h localhost -p 5432 # default is pg_dump -U user -h 127.0.0.1 -p 5432
+        commands: psql -U postgres -h postgres -p 5432 # default is pg_dump -U user -h 127.0.0.1 -p 5432
         # Password passed to postgres cli
         password: password # optional
     - name: Init database
