@@ -45,6 +45,7 @@ jobs:
       uses: isikerhan/setup-git@v1.0.0
       with:
         git-version: 2.43.0
+        cache: false
     
     - name: Checkout code
       uses: actions/checkout@v4
