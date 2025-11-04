@@ -41,6 +41,9 @@ jobs:
           --health-retries 10
 
     steps:
+    - name: Setup Git
+      uses: isikerhan/setup-git@v1.0.0
+    
     - name: Checkout code
       uses: actions/checkout@v4
       with:
@@ -65,8 +68,6 @@ jobs:
         done
         echo "❌ Postgres did not become ready in time" >&2
         exit 1
-    - name: Setup Git
-      uses: isikerhan/setup-git@v1.0.0
     - name: Init database
       env:
         PGUSERNAME: postgres
