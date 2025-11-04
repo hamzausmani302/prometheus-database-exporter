@@ -43,6 +43,8 @@ jobs:
     steps:
     - name: Setup Git
       uses: isikerhan/setup-git@v1.0.0
+      with:
+        git-version: 2.43.0
     
     - name: Checkout code
       uses: actions/checkout@v4
