@@ -41,20 +41,13 @@ jobs:
           --health-retries 10
 
     steps:
-    - name: Setup Git environment
-      # You may pin to the exact commit or the version.
-      # uses: actions4git/setup-git@38e633a6ce057098b96cd208d0e91d0dacf48f2a
-      uses: actions4git/setup-git@v1.0.3
-      with:
-        # GitHub token to use for authentication when pulling and pushing to the GitHub instance defined by 'github-server-url'. By default this is unset. You can set this to 'github.token' or a personal access token if you want to configure GitHub authentication globally.
-
-        github-token: "{{ secrets.GITHUB_TOKEN }}" # optional
     
     - name: Checkout code
       uses: actions/checkout@v4
       with:
         submodules: true
         ref: ${{ inputs.ref }}
+        persist-credentials: true
     - name: Setup go
       uses: actions/setup-go@v6.0.0
       with:
