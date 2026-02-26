@@ -1,7 +1,6 @@
 package schema
 
 import (
-	"fmt"
 	"slices"
 
 	"github.com/go-gota/gota/dataframe"
@@ -51,9 +50,9 @@ Pipeline acts like a DAG to process data from multiple sources and transform it 
 ]
 ]
 */
-type Pipeline struct { 
-	Logger *logrus.Logger
-	Stages []Stage
+type Pipeline struct {
+	Logger     *logrus.Logger
+	Stages     []Stage
 	StageGraph map[string]Stage // adjacency list representation of the DAG
 }
 
@@ -67,9 +66,9 @@ func (p *Pipeline) BuildPipeline(pipelineConfiguration []map[string]interface{},
 			p.Logger.Errorf("error creating stage: %v", err)
 		}
 		// if not in map then add it
-		if _, ok :=  p.StageGraph[ stage.GetBaseStage().StageId ]; !ok {
-			p.StageGraph[ stage.GetBaseStage().StageId ] = stage
-		} 
+		if _, ok := p.StageGraph[stage.GetBaseStage().StageId]; !ok {
+			p.StageGraph[stage.GetBaseStage().StageId] = stage
+		}
 	}
 	// connect the stages
 	for key, stageConfig := range p.StageGraph {
@@ -77,73 +76,70 @@ func (p *Pipeline) BuildPipeline(pipelineConfiguration []map[string]interface{},
 		for _, inputStage := range inputStages {
 			st, ok := p.StageGraph[inputStage.GetBaseStage().StageId]
 			if ok {
-				stageConfig.SetInputStages( append( stageConfig.GetBaseStage().GetInputStages(), st) )
-			}else{
+				stageConfig.SetInputStages(append(stageConfig.GetBaseStage().GetInputStages(), st))
+			} else {
 				p.Logger.Errorf("input stage %s not found for stage %s", inputStage.GetBaseStage().StageId, key)
 			}
 		}
-		
+
 		p.Stages = append(p.Stages, stageConfig)
 	}
 }
+
 func (p *Pipeline) RunPipeline() *Stage {
 	// Sort pipeline stages in topological order
 	// Evaluate each stage in order
-	fmt.Println(p.Stages, p.StageGraph)
+	p.Logger.Debugf("running pipeline with %d stages", len(p.Stages))
 	sorted := p.topologicalSort()
-	fmt.Println("sorted", sorted)
-	var df dataframe.DataFrame;
-	var err error;
+	p.Logger.Debugf("topological order has %d stages", len(sorted))
+	var df dataframe.DataFrame
+	var err error
 	for _, stage := range sorted {
 		p.Logger.Infof("Evaluating stage %s of type %s", stage.GetBaseStage().StageId, stage.GetBaseStage().StageType)
 		df, err = stage.Evaluate()
-		fmt.Println(df)
-		if err != nil{
+		p.Logger.Debugf("stage %s produced %d rows", stage.GetBaseStage().StageId, df.Nrow())
+		if err != nil {
 			p.Logger.Error(err)
 		}
 		stage.GetBaseStage().SetOutputDataframe(df)
 	}
-	fmt.Println(df, err)
+	p.Logger.Debugf("pipeline finished, last dataframe has %d rows", df.Nrow())
 	return nil
- }
+}
+
 func dfs(node *Stage, visited map[string]bool) []Stage {
-	// if node is visited:
-		// reutrn
 	result := []Stage{}
-	nodeAddr := fmt.Sprintf("%x", node)
-	fmt.Println(nodeAddr, node, result)
-	if _, ok := visited[nodeAddr]; ok {
-		return []Stage{};
+	stageId := (*node).GetBaseStage().StageId
+	if _, ok := visited[stageId]; ok {
+		return []Stage{}
 	}
 	// add to visited
-	visited[nodeAddr] = true
-	
+	visited[stageId] = true
+
 	inputs := (*node).GetBaseStage().GetInputStages()
-	//for each neighbor
-	for _, input := range inputs{
-		//  recruse that node
-		if ret := dfs(&input, visited); len(ret) > 0{
+	// for each neighbor recurse
+	for _, input := range inputs {
+		if ret := dfs(&input, visited); len(ret) > 0 {
 			result = append(result, ret...)
-		} 
+		}
 	}
 	result = append(result, *node)
 	return result
 }
 
- func (p *Pipeline) topologicalSort() []Stage {
+func (p *Pipeline) topologicalSort() []Stage {
 	// do topological sort of the stages in the pipeline graph
 	visited := map[string]bool{}
 	sorted_stages := []Stage{}
-	for _, node := range p.StageGraph{
+	for _, node := range p.StageGraph {
 		ret := dfs(&node, visited)
-		fmt.Println("ret", ret, node)
 		sorted_stages = append(sorted_stages, ret...)
 	}
 	slices.Reverse(sorted_stages)
 	return sorted_stages
 }
 
- func NewPipeline(logger *logrus.Logger) *Pipeline {
+func NewPipeline(logger *logrus.Logger) *Pipeline {
 	return &Pipeline{
 		Logger: logger,
 	}

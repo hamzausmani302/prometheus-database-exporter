@@ -2,7 +2,6 @@ package schema
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/datasource"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/utils"
@@ -96,7 +95,7 @@ func (query *Query) Load(logger *logrus.Logger, queryData map[string]interface{}
 		return err
 	}
 	// assign datasource
-	fmt.Println(dataSources, string(content), query)
+	logger.Debugf("loaded query %q targeting datasource %q", query.Name, query.DataSource)
 	ds, ok := dataSources[query.DataSource]
 	if !ok {
 		logger.Errorf("data source %s not found", query.DataSource)

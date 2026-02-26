@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 
 	"github.com/go-gota/gota/dataframe"
 	_ "github.com/lib/pq"
@@ -49,7 +48,8 @@ func (reader *PostgresReader) Read(query string) (dataframe.DataFrame, error) {
 		}
 
 		if err := rows.Scan(valuePtrs...); err != nil {
-			log.Fatal(err)
+			reader.Logger.Errorf("error scanning row: %v", err)
+			return dataframe.DataFrame{}, err
 		}
 
 		rowMap := make(map[string]interface{})
@@ -81,16 +81,15 @@ func (reader *PostgresReader) Connect() (*sql.DB, error) {
 		reader.Logger.Warn("connection string is empty ,so generating one from the info provided")
 		conn_string = fmt.Sprintf("postgres://%s:%s@%s:%d?sslmode=disable", reader.Username, reader.Password, reader.Host, reader.Port)
 	}
-	reader.Logger.Info("conn_string - ", conn_string)
+	reader.Logger.Info("connecting to postgres database")
 	reader.ctx = context.Background()
 	conn, err := sql.Open("postgres", conn_string)
 	if err != nil {
 		return nil, err
 	}
-	err = conn.Ping()
-    if err != nil {
-        log.Fatalf("Failed to connect to the database: %v", err)
-    }
+	if err = conn.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to connect to the database: %w", err)
+	}
 
 	reader.conn = conn
 	return conn, nil

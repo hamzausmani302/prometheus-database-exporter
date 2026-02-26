@@ -46,25 +46,31 @@ func (app *Application) Init() error {
 	app.cfg = &cfg
 	app.logger.Debug(cfg)
 
-	// initilizing data sources
+	// initializing data sources
 	app.dataSourceMap = map[string]datasource.IDataSource{}
 	for _, dsource := range cfg.DataSource {
-		app.dataSourceMap[dsource.Name] = factories.NewDatasourceFactory(app.logger, &cfg).Create(dsource)
+		ds, err := factories.NewDatasourceFactory(app.logger, &cfg).Create(dsource)
+		if err != nil {
+			return err
+		}
+		app.dataSourceMap[dsource.Name] = ds
 	}
 	dataSourceExecutor := datasource_executor.NewDataSourceExecutor(app.logger, app.dataSourceMap)
 	// Mapping Query to class object
 	app.queries = schema.LoadMany(app.logger, cfg.Queries, app.dataSourceMap)
-	// Initizing cache store
-	cacheStore := factories.NewCacheStoreFactory(app.logger, &cfg).Create(cfg.Store)
+	// Initializing cache store
+	cacheStore, cacheErr := factories.NewCacheStoreFactory(app.logger, &cfg).Create(cfg.Store)
+	if cacheErr != nil {
+		return cacheErr
+	}
 	app.store = &cacheStore
 
-	// Initializing schduler
+	// Initializing scheduler
 	storage, storageErr := factories.NewSchdulerStorageFactory(app.logger, &cfg).Create(cfg.Scheduler)
-	app.storage = storage
 	if storageErr != nil {
-		app.logger.Panic(storageErr)
 		return storageErr
 	}
+	app.storage = storage
 	sch := scheduler.New(storage)
 	qScheduler := queryscheduler.NewQuerySchduler(app.logger, &cfg, &sch, app.queries, app.store, &app.Done, dataSourceExecutor)
 	if err := qScheduler.Init(); err != nil {
@@ -89,7 +95,7 @@ func (app *Application) StartCollector() {
 // registerCollectors registers the metric collectors with Prometheus or additional backends
 func (app *Application) registerCollectors() {
 	collectorConfig := app.cfg.Collector
-	queryCollector := col.MCollector{DataStore: app.store, Logger: app.logger, Queries: app.queries}
+	queryCollector := col.QueryCollector{DataStore: app.store, Logger: app.logger, Queries: app.queries}
 	// all collectors will be registered here
 	if strings.EqualFold(strings.ToLower(string(collectorConfig.CollectType)), strings.ToLower(string(config.Prometheus))) {
 		// register prometheus collector

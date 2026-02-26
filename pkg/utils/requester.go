@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"fmt"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -11,20 +10,18 @@ import (
 	"time"
 )
 
-func SimpleGetRequest(url string) (string, error){
+func SimpleGetRequest(url string) (string, error) {
 	resp, err := http.Get(url)
-    if err != nil {
-        fmt.Println("Error:", err)
-        return "", err
-    }
-    defer resp.Body.Close() // Always close response body
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close() // Always close response body
 
-    // Read the response body
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        fmt.Println("Read error:", err)
-        return "", err
-    }
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
 	return string(body), nil
 }
 

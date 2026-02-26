@@ -8,6 +8,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+
 type RedisCache struct {
 	client *redis.Client
 	ctx    context.Context
@@ -33,7 +34,6 @@ func NewRedisCache(options RedisConnectionSettings) *RedisCache {
 
 	ctx := context.Background()
 	if _, err := rdb.Ping(ctx).Result(); err != nil {
-		fmt.Println(err)
 		return nil
 	}
 

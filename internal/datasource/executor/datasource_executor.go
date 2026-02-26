@@ -26,8 +26,10 @@ func (d *DataSourceExecutor) Execute(query schema.Query) (dataframe.DataFrame, e
 		pipeline := schema.NewPipeline(d.logger)
 		pipeline.BuildPipeline(query.Pipeline, d.dataSourceMap)
 		stage := pipeline.RunPipeline()
-		df =  (*stage).GetBaseStage().GetOutput()
-	}else{
+		if stage != nil {
+			df = (*stage).GetBaseStage().GetOutput()
+		}
+	} else {
 		// execute it as a query
 		ds := d.dataSourceMap[query.DataSource]
 		if err := ds.Connect();err != nil {

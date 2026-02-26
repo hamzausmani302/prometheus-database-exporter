@@ -12,15 +12,16 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+
 // prometheus uses float64 or int
-type MMetricResultType float64
-type MCollector struct {
+type MetricValue float64
+type QueryCollector struct {
 	Logger    *logrus.Logger
 	DataStore *cache.ICache
 	Queries   []*schema.Query
 }
 
-func (_collector *MCollector) getDataFromStore(key string) (dataframe.DataFrame, error) {
+func (_collector *QueryCollector) getDataFromStore(key string) (dataframe.DataFrame, error) {
 	// fetching data from store
 	_collector.Logger.Infof("Getting data for task id = %s", key)
 	var bytesData []byte
@@ -34,7 +35,7 @@ func (_collector *MCollector) getDataFromStore(key string) (dataframe.DataFrame,
 	return utils.DataFrameFromCSVBytes(bytesData), nil
 }
 
-func (_collector *MCollector) assignLabels(cols []string, record []string, query *schema.Query) []CollectorMetricLabel {
+func (_collector *QueryCollector) assignLabels(cols []string, record []string, query *schema.Query) []CollectorMetricLabel {
 	var commonLabels []CollectorMetricLabel = []CollectorMetricLabel{}
 	for _, label := range query.Labels {
 		// if static value is not provided, assign the column Value
@@ -64,17 +65,17 @@ func (_collector *MCollector) assignLabels(cols []string, record []string, query
 	return commonLabels
 }
 
-func (_collector *MCollector) mapToCollectorMetric(df dataframe.DataFrame, query schema.Query) ([]CollectorMetric[MMetricResultType], error) {
+func (_collector *QueryCollector) mapToCollectorMetric(df dataframe.DataFrame, query schema.Query) ([]CollectorMetric[MetricValue], error) {
 	_collector.Logger.Debug("Prmehteus mapping to collector")
 	cols := df.Names()
 	_collector.Logger.Debug(cols)
 	records := df.Copy().Records()
 	if len(records) <= 1 {
 		_collector.Logger.Warn("Result of query is empty")
-		return []CollectorMetric[MMetricResultType]{}, nil
+		return []CollectorMetric[MetricValue]{}, nil
 	}
 
-	exportMetrics := []CollectorMetric[MMetricResultType]{}
+	exportMetrics := []CollectorMetric[MetricValue]{}
 	for _, metric := range query.Metrics {
 		for i := 1; i < len(records); i++ {
 			// Assign labels
@@ -86,10 +87,10 @@ func (_collector *MCollector) mapToCollectorMetric(df dataframe.DataFrame, query
 				if err != nil {
 					_collector.Logger.Errorf("For metric = %s , error converting result %s to float", metric.Name, records[i][idx])
 				} else {
-					exportMetric := CollectorMetric[MMetricResultType]{
+					exportMetric := CollectorMetric[MetricValue]{
 						Name:   fmt.Sprintf("%s_%s", query.Name, metric.Name),
 						Labels: labels,
-						Value:  MMetricResultType(value),
+						Value:  MetricValue(value),
 						Type:   metric.Type,
 						Help:   metric.Help,
 					}
@@ -108,8 +109,8 @@ func (_collector *MCollector) mapToCollectorMetric(df dataframe.DataFrame, query
 	return exportMetrics, nil
 }
 
-func (_collector *MCollector) GetCollectedMetrics() ([]CollectorMetric[MMetricResultType], error) {
-	export_metrics := []CollectorMetric[MMetricResultType]{}
+func (_collector *QueryCollector) GetCollectedMetrics() ([]CollectorMetric[MetricValue], error) {
+	export_metrics := []CollectorMetric[MetricValue]{}
 	for _, query := range _collector.Queries {
 		_collector.Logger.Debugf("Query data for hash = %s", query.GetHash())
 		df, err := _collector.getDataFromStore(query.GetHash())
@@ -126,14 +127,13 @@ func (_collector *MCollector) GetCollectedMetrics() ([]CollectorMetric[MMetricRe
 	return export_metrics, nil
 }
 
-func (_collector *MCollector) scrapeMetric(metrics []CollectorMetric[MMetricResultType]) error {
-	fmt.Println("Promethus scraping Metric")
-
+func (_collector *QueryCollector) scrapeMetric(metrics []CollectorMetric[MetricValue]) error {
+	_collector.Logger.Debug("Prometheus scraping metrics")
 	return nil
 }
 
-func NewCollector(logger *logrus.Logger, store *cache.ICache, queries []*schema.Query) ICollector[MMetricResultType] {
-	return &MCollector{
+func NewCollector(logger *logrus.Logger, store *cache.ICache, queries []*schema.Query) ICollector[MetricValue] {
+	return &QueryCollector{
 		Logger:  logger,
 		DataStore: store,
 		Queries: queries,

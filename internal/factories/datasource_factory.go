@@ -1,6 +1,8 @@
 package factories
 
 import (
+	"fmt"
+
 	"github.com/hamzausmani302/prometheus-database-exporter/config"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/datasource"
 	"github.com/sirupsen/logrus"
@@ -15,12 +17,11 @@ type DatasourceFactory struct {
 	cfg    *config.ApplicationConfig
 }
 
-func (dsf *DatasourceFactory) Create(dataSourceConfig config.DataSourceConfig) datasource.IDataSource {
+func (dsf *DatasourceFactory) Create(dataSourceConfig config.DataSourceConfig) (datasource.IDataSource, error) {
 	if dataSourceConfig.DataSourceType == "SQL" {
-		return datasource.NewPostgresDatasource(dsf.logger, dsf.cfg, dataSourceConfig)
+		return datasource.NewPostgresDatasource(dsf.logger, dsf.cfg, dataSourceConfig), nil
 	}
-	dsf.logger.Fatalf("Invalid Data source: %s", dataSourceConfig.DataSourceType)
-	return nil
+	return nil, fmt.Errorf("invalid datasource type: %s", dataSourceConfig.DataSourceType)
 }
 
 func NewDatasourceFactory(logger *logrus.Logger, cfg *config.ApplicationConfig) *DatasourceFactory {

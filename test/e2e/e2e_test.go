@@ -7,12 +7,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"regexp"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/hamzausmani302/prometheus-database-exporter/config"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/initiator"
 
 	"github.com/hamzausmani302/prometheus-database-exporter/pkg/utils"
@@ -21,14 +21,11 @@ import (
 )
 
 var EXPECTED_MAP map[string]string = map[string]string{
-	"taxi_rides123_total_wells1": "10",
-	"taxi_rides12_total_wells1": "10",
-	"taxi_rides_total_wells": "10",
+	"product_inventory_product_count": "1",
 }
 
-func TestEnd2EndApplicationKpisTest(t *testing.T){
+func TestEnd2EndApplicationKpisTest(t *testing.T) {
 	// assumption : postgres and redis are already running
-	// load config from the new file
 	rootLogger := logrus.New()
 	done := make(chan bool, 1)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
@@ -36,38 +33,29 @@ func TestEnd2EndApplicationKpisTest(t *testing.T){
 
 	// set the config file path
 	utils.SetEnvironmentVariable("CONFIG_FILE_PATH", "config/config.test.yaml")
-	cfg := config.GetConfig("test", rootLogger)
-	
-	
 
 	go appStartUp(rootLogger, done)
-	
+
 	go func() {
-		// Listens for intended termination and terminate the memory addresses
 		rootLogger.Info("triggered executing")
-		// sig := <-sigs
-		<- done
-		// rootLogger.Debug(sig)
-		// close scheduler
+		<-done
 		rootLogger.Info("Closing")
-		// close(sigs)
 		close(done)
 	}()
+
 	rootLogger.Info("Waiting for end")
-	err := testExporter(&ctx, &cfg, done)
-	
+	err := testExporter(ctx, done)
+
 	done <- true
 	if err != nil {
 		t.Error(err)
 	}
-	<- done
-	
-	rootLogger.Info("Terminating program...")
+	<-done
 
+	rootLogger.Info("Terminating program...")
 }
 
-func appStartUp(logger *logrus.Logger, done chan bool){
-
+func appStartUp(logger *logrus.Logger, done chan bool) {
 	app := initiator.Application{Done: done}
 	if err := app.Init(); err != nil {
 		logger.Panic("Failed to initialize application", err)
@@ -79,63 +67,80 @@ func appStartUp(logger *logrus.Logger, done chan bool){
 	if app.IsApiEnabled() {
 		go app.StartApi()
 	}
-	<- done
-	
+	<-done
 }
 
-// Test the exporter running as a service
-func testExporter(ctx *context.Context,cfg *config.ApplicationConfig ,done chan bool) error{
-	time.Sleep(30 * time.Second)		// Wait for 30 sec then test 
-	baseUrl := "http://localhost:2112"
-	response, err := utils.SimpleGetRequest(baseUrl + "/metrics")
+// waitForReady polls the /metrics endpoint until it returns HTTP 200 or the context expires.
+func waitForReady(ctx context.Context, url string) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("timed out waiting for %s to be ready", url)
+		default:
+			resp, err := http.Get(url)
+			if err == nil && resp.StatusCode == http.StatusOK {
+				resp.Body.Close()
+				return nil
+			}
+			if resp != nil {
+				resp.Body.Close()
+			}
+			time.Sleep(500 * time.Millisecond)
+		}
+	}
+}
+
+// testExporter waits for the exporter to be ready, then validates metrics.
+func testExporter(ctx context.Context, done chan bool) error {
+	baseURL := "http://localhost:2112"
+	if err := waitForReady(ctx, baseURL+"/metrics"); err != nil {
+		return err
+	}
+	response, err := utils.SimpleGetRequest(baseURL + "/metrics")
 	if err != nil {
 		return err
 	}
 	metrics := fetchAllMetrics(response)
-	for _, metric := range metrics{
-		m , ok:= EXPECTED_MAP[metric.MetricName]
-		if ok && m != metric.Value  {
-			return errors.New(fmt.Sprintf("expected = %s, got = %s", m , metric.Value))
-		} 
+	for _, metric := range metrics {
+		m, ok := EXPECTED_MAP[metric.MetricName]
+		if ok && m != metric.Value {
+			return errors.New(fmt.Sprintf("expected = %s, got = %s", m, metric.Value))
+		}
 	}
-	fmt.Println(metrics)
 	return nil
 }
 
-
-func fetchAllMetrics(data string) []MetricResult{
+func fetchAllMetrics(data string) []MetricResult {
 	lines := strings.Split(data, "\n")
 	metrics := []MetricResult{}
 	for _, line := range lines {
 		if !strings.HasPrefix(line, "#") {
 			m := getMetricFromString(line)
 			if m.MetricName != "" {
-				metrics = append(metrics,  m)
+				metrics = append(metrics, m)
 			}
-		} 
-	} 
+		}
+	}
 	return metrics
 }
 
-type MetricResult struct{
+type MetricResult struct {
 	MetricName string
-	Labels string
-	Value string
+	Labels     string
+	Value      string
 }
 
 func getMetricFromString(metricString string) MetricResult {
-	var m MetricResult;
-	// fmt.Println("metricString", metricString)
+	var m MetricResult
 	pattern := "^([a-zA-Z_:][a-zA-Z0-9_:]*)\\s*(\\{[^}]*\\})?\\s+([\\d.e+-]+)$"
 	re := regexp.MustCompile(pattern)
 	matches := re.FindStringSubmatch(metricString)
 	if matches != nil {
 		m = MetricResult{
 			MetricName: matches[1],
-			Labels: matches[2],
-			Value: matches[3],
+			Labels:     matches[2],
+			Value:      matches[3],
 		}
 	}
 	return m
-
 }

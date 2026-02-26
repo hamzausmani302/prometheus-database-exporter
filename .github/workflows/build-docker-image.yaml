@@ -19,12 +19,10 @@ jobs:
             - name: Set up Go
               uses: actions/setup-go@v4
               with:
-                  go-version: "1.22"
+                  go-version: "1.24"
             - name: Build Image
               run: |
                   echo "Building docker image"
-                  echo ${{ vars.DOCKER_USERNAME }}
-                  echo "pass= ${{ secrets.DOCKER_PASSWORD }}"
                   TAG_NAME=$(cat .ver)
                   git submodule update --init --recursive
                   docker build -t hamzausmani021/prometheus-database-exporter:$TAG_NAME . --progress=plain

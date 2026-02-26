@@ -1,0 +1,41 @@
+enableApi: true
+enableCollector: true
+schedulerConfig:
+  storage: "memory"
+  metadata:
+    connectionDetails: {}
+storeConfig:
+  type: "local"
+  metadata:
+    connectionDetails: {}
+collectorConfig:
+  type: prometheus
+  metadata: {}
+serverConfig:
+  port: 2112
+  numWorkers: 5
+dataSourceConfig:
+  - name: postgres-test
+    type: SQL
+    metadata:
+      connectionDetails:
+        host: localhost
+        port: 5433
+        username: postgres
+        password: password
+        connectionString: "postgresql://postgres:password@localhost:5433/exporter?sslmode=disable"
+
+queries:
+  - name: product_inventory
+    dataSource: postgres-test
+    query: "SELECT task_status, COUNT(*) AS product_count FROM products GROUP BY task_status"
+    queryRefreshTime: 5
+    queryTimeout: 10
+    labels:
+      - name: task_status
+        columnName: task_status
+    metrics:
+      - name: product_count
+        type: GAUGE
+        help: "Number of products per task status"
+        column: product_count

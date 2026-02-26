@@ -32,11 +32,15 @@ type PostgresDataSource struct {
 
 // GetData fetches data from the PostgreSQL database and returns it as a DataFrame.
 func (p *PostgresDataSource) GetData(query IQuery) dataframe.DataFrame {
-	queryOptions := query.(SQLQuery)
+	queryOptions, ok := query.(SQLQuery)
+	if !ok {
+		p.logger.Errorf("expected SQLQuery type, got %T", query)
+		return dataframe.DataFrame{}
+	}
 	p.logger.Info("Reading data from Postgres Database")
 	df, err := (*p.Reader).Read(queryOptions.Query)
 	if err != nil {
-		p.logger.Errorf("%s faied with err %s", query, err)
+		p.logger.Errorf("%s failed with err %s", query, err)
 	}
 	p.logger.Debug(df)
 	return df
@@ -46,7 +50,7 @@ func (p *PostgresDataSource) GetData(query IQuery) dataframe.DataFrame {
 func (p *PostgresDataSource) Connect() error {
 	p.logger.Info("Connecting to Postgres Database")
 	if _, err := (*p.Reader).Connect(); err != nil {
-		panic(err)
+		return err
 	}
 	return nil
 }
@@ -72,7 +76,7 @@ func NewPostgresDatasource(logger *logrus.Logger, configuration *config.Applicat
 		Password:         dataSourceConfig.Metadata.ConnectionDetails["password"],
 		ConnectionString: dataSourceConfig.Metadata.ConnectionDetails["connectionString"],
 	}
-	logger.Info(reader, dataSourceConfig.Metadata.ConnectionDetails)
+	logger.Infof("initializing datasource: %s", dataSourceConfig.Name)
 	ds := PostgresDataSource{logger: logger, cfg: configuration, dataSourceconfig: dataSourceConfig, Reader: &reader}
 	if err := ds.Connect(); err != nil {
 		logger.Error("Failed to connect to Postgres database", err)

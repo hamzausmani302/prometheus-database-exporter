@@ -68,9 +68,9 @@ type ForEachStage struct {
 	dataSource datasource.IDataSource
 }
 func(ForEachStage) GetType() StageType {return StageTypeForeach}
-func(ForEachStage) Evaluate() (dataframe.DataFrame, error) {
-		fmt.Println("Foreach evaluation")
-		return dataframe.DataFrame{}, nil
+func (ForEachStage) Evaluate() (dataframe.DataFrame, error) {
+	// ForEachStage is not yet implemented
+	return dataframe.DataFrame{}, nil
 }
 func (f *ForEachStage) GetBaseStage() *BaseStage {
 	return &f.BaseStage

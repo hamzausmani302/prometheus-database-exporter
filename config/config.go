@@ -147,19 +147,21 @@ func GetConfig(logger *logrus.Logger) ApplicationConfig {
 		content, err := os.ReadFile(configFilePath)
 		if err != nil {
 			logger.Fatalf("Error reading file: %v", err)
-			panic("There is a problem reading the file...")
 		}
 		applicationConfig.ReadConfigData(content)
-		ReadEnvVars(&applicationConfig)
+		if err := ReadEnvVars(&applicationConfig); err != nil {
+			logger.Fatalf("Error reading env variables: %v", err)
+		}
 		appCfg = &applicationConfig
-	
+
 	}
 	return *appCfg
 }
 
-func ReadEnvVars(applicationConfig *ApplicationConfig){
-	// envrironment variables have higher prioirty than normal variables
-	if err := envv11.Parse(applicationConfig); err != nil{
-		panic("Error reading Env variables")
+func ReadEnvVars(applicationConfig *ApplicationConfig) error {
+	// environment variables have higher priority than config file values
+	if err := envv11.Parse(applicationConfig); err != nil {
+		return err
 	}
+	return nil
 }
