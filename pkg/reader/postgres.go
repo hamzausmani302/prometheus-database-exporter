@@ -11,11 +11,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type Reader interface {
-	Connect() (*sql.DB, error)
-	Read(query string) (dataframe.DataFrame, error)
-	Close() error
-}
 
 type PostgresReader struct {
 	ctx              context.Context

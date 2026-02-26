@@ -10,6 +10,7 @@ import (
 	col "github.com/hamzausmani302/prometheus-database-exporter/internal/collector"
 	promcollector "github.com/hamzausmani302/prometheus-database-exporter/internal/collector/prometheus"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/datasource"
+	datasource_executor "github.com/hamzausmani302/prometheus-database-exporter/internal/datasource/executor"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/factories"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/queryscheduler"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/schema"
@@ -38,8 +39,10 @@ func(app *Application) GetConfig() config.ApplicationConfig{
 // Setup and initialize the application components by resolving dependencies
 func (app *Application) Init() error {
 	app.logger = logrus.New()
-	app.logger.Debug("Setting up application")
-	cfg := config.GetConfig("example", app.logger)
+	logrus.SetReportCaller(true) // Enable file and line number reporting
+    
+	app.logger.Info("Setting up Exporter")
+	cfg := config.GetConfig( app.logger)
 	app.cfg = &cfg
 	app.logger.Debug(cfg)
 
@@ -48,7 +51,7 @@ func (app *Application) Init() error {
 	for _, dsource := range cfg.DataSource {
 		app.dataSourceMap[dsource.Name] = factories.NewDatasourceFactory(app.logger, &cfg).Create(dsource)
 	}
-
+	dataSourceExecutor := datasource_executor.NewDataSourceExecutor(app.logger, app.dataSourceMap)
 	// Mapping Query to class object
 	app.queries = schema.LoadMany(app.logger, cfg.Queries, app.dataSourceMap)
 	// Initizing cache store
@@ -63,7 +66,7 @@ func (app *Application) Init() error {
 		return storageErr
 	}
 	sch := scheduler.New(storage)
-	qScheduler := queryscheduler.NewQuerySchduler(app.logger, &cfg, &sch, app.queries, app.store, &app.Done)
+	qScheduler := queryscheduler.NewQuerySchduler(app.logger, &cfg, &sch, app.queries, app.store, &app.Done, dataSourceExecutor)
 	if err := qScheduler.Init(); err != nil {
 		app.logger.Panic("cannot initialize the scheduler", err)
 		return err
@@ -76,7 +79,7 @@ func (app *Application) Init() error {
 
 // StartCollector starts the metric collection process
 func (app *Application) StartCollector() {
-	app.logger.Debug("Starting collector")
+	app.logger.Info("Starting collector")
 	if err := app.qScheduler.Start(); err != nil {
 		app.logger.Panic("Failed to start collector", err)
 	}

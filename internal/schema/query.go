@@ -36,10 +36,15 @@ type Query struct {
 	DataSource       string `yaml:"dataSource"`
 	dataSource       *datasource.IDataSource
 	Query            string   `yaml:"query"`
+	Pipeline		 []map[string]interface{} `yaml:"pipeline"`
 	QueryTimeout     int      `yaml:"queryTimeout"`
 	QueryRefreshTime int      `yaml:"queryRefreshTime"`
 	Labels           []Label  `yaml:"labels"`
 	Metrics          []Metric `yaml:"metrics"`
+}
+// query has pipeline or only query
+func (query *Query) IsPipeline() bool {
+	return len(query.Pipeline) > 0
 }
 
 // Set the value of hash from outside

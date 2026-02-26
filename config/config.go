@@ -110,6 +110,7 @@ type ApplicationConfig struct {
 	DataSource []DataSourceConfig `yaml:"dataSourceConfig"`
 	// Queries to be executed to fetch metrics
 	Queries []map[string]interface{} `yaml:"queries"`
+	// Pipeline to be executed to fetch metrics
 	// Enable collector
 	EnableCollector bool `yaml:"enableCollector" env:"ENABLE_COLLECTOR" envDefault:"true"`
 	// Enable API
@@ -129,7 +130,7 @@ func (cfg *ApplicationConfig) ReadConfigData(data []byte) {
 
 var appCfg *ApplicationConfig
 
-func GetConfig(env string, logger *logrus.Logger) ApplicationConfig {
+func GetConfig(logger *logrus.Logger) ApplicationConfig {
 	var applicationConfig ApplicationConfig
 	if appCfg == nil {
 		logger.SetLevel(logrus.DebugLevel)

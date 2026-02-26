@@ -6,7 +6,7 @@ import (
 	"github.com/algorythma/go-scheduler"
 	"github.com/algorythma/go-scheduler/task"
 	"github.com/hamzausmani302/prometheus-database-exporter/config"
-	"github.com/hamzausmani302/prometheus-database-exporter/internal/datasource"
+	datasource_executor "github.com/hamzausmani302/prometheus-database-exporter/internal/datasource/executor"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/schema"
 	"github.com/hamzausmani302/prometheus-database-exporter/pkg/cache"
 	"github.com/hamzausmani302/prometheus-database-exporter/pkg/utils"
@@ -43,6 +43,7 @@ type QueryScheduler struct {
 	scheduler      *scheduler.Scheduler
 	programChannel *chan bool
 	cacheStore     *cache.ICache
+	datasourceExecutor datasource_executor.IDataSourceExecutor
 }
 
 func (q *QueryScheduler) Init() error {
@@ -80,15 +81,7 @@ func (q *QueryScheduler) Stop() error {
 func (q *QueryScheduler) ExecuteTask(query *schema.Query) error {
 	now := time.DateTime
 	q.logger.Infof("Executing task for %s %s %s %s | %d",query.GetHash(), query.Name, query.Query, now, query.QueryRefreshTime)
-	ds := *query.GetDataSource()
-	// get data from database
-	if err := ds.Connect(); err != nil {
-		q.logger.Errorf("Error connecting to data source %s", query.DataSource)
-		return err
-	}
-	df := ds.GetData(datasource.SQLQuery{
-		Query: query.Query,
-	})
+	df, _ := q.datasourceExecutor.Execute(*query)
 	q.logger.Debug(df)
 
 	// put the data with the key in cacheStore
@@ -103,6 +96,6 @@ func (q *QueryScheduler) ExecuteTask(query *schema.Query) error {
 	return nil
 }
 
-func NewQuerySchduler(logger *logrus.Logger, cfg *config.ApplicationConfig, baseScheduler *scheduler.Scheduler, queries []*schema.Query, store *cache.ICache, channel *chan bool) *QueryScheduler {
-	return &QueryScheduler{logger: logger, cfg: cfg, scheduler: baseScheduler, Queries: queries, programChannel: channel, cacheStore: store}
+func NewQuerySchduler(logger *logrus.Logger, cfg *config.ApplicationConfig, baseScheduler *scheduler.Scheduler, queries []*schema.Query, store *cache.ICache, channel *chan bool, datasourceExecutor datasource_executor.IDataSourceExecutor) *QueryScheduler {
+	return &QueryScheduler{logger: logger, cfg: cfg, scheduler: baseScheduler, Queries: queries, programChannel: channel, cacheStore: store, datasourceExecutor: datasourceExecutor}
 }
