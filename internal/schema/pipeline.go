@@ -1,7 +1,7 @@
 package schema
 
 import (
-	"slices"
+	"fmt"
 
 	"github.com/go-gota/gota/dataframe"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/datasource"
@@ -9,138 +9,124 @@ import (
 )
 
 /*
-The following pipeline.go will hold the logic for the evaluation of pipelines.
-A pipeline is a series of data processing steps. Each step takes in data, processes it, and passes it to the next step.
-This is useful for transforming and analyzing data in a structured way.
+Pipeline executes a directed acyclic graph (DAG) of stages. Each stage receives
+the output DataFrame of its declared input stages and produces a new DataFrame.
+The final stage's output is returned as the pipeline result.
 
-Pipeline acts like a DAG to process data from multiple sources and transform it stage by stage.
-/*
-[
-{
-	stageId: "stage1",
-	stageType: "extract",
-	dataSource: "PostgresDB",
-	databaseName: "metrics_db",
-	query: "SELECT user_id, activity_type, activity_timestamp FROM user_activities WHERE activity_timestamp >= NOW() - INTERVAL '1 DAY';"
-	queryResultPersistTime: 0	// no caching
-},
-{
-	stageId: "stage2",
-	stageType: "foreach",
-	inputStageIds: ["stage1"],
-	dataSource: "PostgresDB",
-	databaseName: "metrics_db",
-	query: "SELECT 1 as trips, 2 as rides"
-	queryResultPersistTime: 0	// no caching
-},
-{
-	stageId: "stage3",
-	stageType: "rename",
-	inputStageIds: ["stage2"],
-	oldColumnName: "rides",
-	newColumnName: "total_rides"
-},
-{
-	stageId: "stage3",
-	stageType: "rename",
-	inputStageIds: ["stage3"],
-	oldColumnName: "trips",
-	newColumnName: "total_trips"
-},
-]
-]
+YAML pipeline config example:
+
+	pipeline:
+	  - stageId: wells
+	    stageType: extract
+	    dataSource: id3_dashboard
+	    query: "SELECT id_t_well, well_name, well_id FROM t_well WHERE is_live"
+
+	  - stageId: gaps
+	    stageType: foreach
+	    dataSource: id3_dashboard
+	    inputStageIds: [wells]
+	    query: "SELECT sum(gap) AS total_gap FROM t_mudlog WHERE id_t_well = {{id_t_well}}"
+
+Stage types:
+  - extract  — runs a plain SQL query; no inputs required
+  - foreach  — for each row of the single input stage, substitutes {{column}}
+               placeholders in the query, runs it, and merges results
+  - rename   — renames a column in the single input stage's DataFrame
 */
 type Pipeline struct {
 	Logger     *logrus.Logger
 	Stages     []Stage
-	StageGraph map[string]Stage // adjacency list representation of the DAG
+	StageGraph map[string]Stage
 }
 
-func (p *Pipeline) BuildPipeline(pipelineConfiguration []map[string]interface{}, dataSourceMap map[string]datasource.IDataSource) {
-	// Add stages to a Graph
+// BuildPipeline constructs the stage DAG from raw YAML config maps.
+// It performs two passes: first it creates all Stage objects and registers
+// them by stageId, then it resolves inputStageIds to actual Stage references.
+func (p *Pipeline) BuildPipeline(pipelineConfig []map[string]interface{}, dataSourceMap map[string]datasource.IDataSource) {
 	p.Stages = []Stage{}
 	p.StageGraph = make(map[string]Stage)
-	for _, stageConfig := range pipelineConfiguration {
-		stage, err := NewStage(stageConfig, dataSourceMap)
-		if err != nil {
-			p.Logger.Errorf("error creating stage: %v", err)
-		}
-		// if not in map then add it
-		if _, ok := p.StageGraph[stage.GetBaseStage().StageId]; !ok {
-			p.StageGraph[stage.GetBaseStage().StageId] = stage
-		}
-	}
-	// connect the stages
-	for key, stageConfig := range p.StageGraph {
-		inputStages := stageConfig.GetBaseStage().GetInputStages()
-		for _, inputStage := range inputStages {
-			st, ok := p.StageGraph[inputStage.GetBaseStage().StageId]
-			if ok {
-				stageConfig.SetInputStages(append(stageConfig.GetBaseStage().GetInputStages(), st))
-			} else {
-				p.Logger.Errorf("input stage %s not found for stage %s", inputStage.GetBaseStage().StageId, key)
-			}
-		}
 
-		p.Stages = append(p.Stages, stageConfig)
+	// Pass 1: create and register all stages
+	for _, cfg := range pipelineConfig {
+		stage, err := NewStage(cfg, dataSourceMap)
+		if err != nil {
+			p.Logger.Errorf("pipeline: error creating stage: %v", err)
+			continue
+		}
+		id := stage.GetBaseStage().StageId
+		if _, exists := p.StageGraph[id]; exists {
+			p.Logger.Warnf("pipeline: duplicate stageId %q — skipping", id)
+			continue
+		}
+		p.StageGraph[id] = stage
+	}
+
+	// Pass 2: resolve inputStageIds → actual Stage references
+	for _, stage := range p.StageGraph {
+		var resolved []Stage
+		for _, depId := range stage.GetBaseStage().InputStageIds {
+			dep, ok := p.StageGraph[depId]
+			if !ok {
+				p.Logger.Errorf("pipeline: stage %q references unknown input stage %q", stage.GetBaseStage().StageId, depId)
+				continue
+			}
+			resolved = append(resolved, dep)
+		}
+		stage.SetInputStages(resolved)
+		p.Stages = append(p.Stages, stage)
 	}
 }
 
-func (p *Pipeline) RunPipeline() *Stage {
-	// Sort pipeline stages in topological order
-	// Evaluate each stage in order
-	p.Logger.Debugf("running pipeline with %d stages", len(p.Stages))
+// RunPipeline executes all stages in topological order and returns the last
+// stage's output DataFrame. Each stage receives the outputs of its input
+// stages via GetBaseStage().GetOutput().
+func (p *Pipeline) RunPipeline() (dataframe.DataFrame, error) {
 	sorted := p.topologicalSort()
-	p.Logger.Debugf("topological order has %d stages", len(sorted))
-	var df dataframe.DataFrame
-	var err error
+	p.Logger.Debugf("pipeline: running %d stages", len(sorted))
+
+	var last dataframe.DataFrame
 	for _, stage := range sorted {
-		p.Logger.Infof("Evaluating stage %s of type %s", stage.GetBaseStage().StageId, stage.GetBaseStage().StageType)
-		df, err = stage.Evaluate()
-		p.Logger.Debugf("stage %s produced %d rows", stage.GetBaseStage().StageId, df.Nrow())
+		id := stage.GetBaseStage().StageId
+		p.Logger.Infof("pipeline: evaluating stage %q (%s)", id, stage.GetType())
+		df, err := stage.Evaluate()
 		if err != nil {
-			p.Logger.Error(err)
+			return dataframe.DataFrame{}, fmt.Errorf("pipeline: stage %q failed: %w", id, err)
 		}
 		stage.GetBaseStage().SetOutputDataframe(df)
+		p.Logger.Debugf("pipeline: stage %q produced %d rows", id, df.Nrow())
+		last = df
 	}
-	p.Logger.Debugf("pipeline finished, last dataframe has %d rows", df.Nrow())
-	return nil
+	return last, nil
 }
 
-func dfs(node *Stage, visited map[string]bool) []Stage {
-	result := []Stage{}
-	stageId := (*node).GetBaseStage().StageId
-	if _, ok := visited[stageId]; ok {
-		return []Stage{}
+// topologicalSort returns stages in dependency-first order using DFS post-order
+// traversal. Dependencies are always visited before the stages that depend on them.
+func (p *Pipeline) topologicalSort() []Stage {
+	visited := map[string]bool{}
+	var sorted []Stage
+	for _, node := range p.StageGraph {
+		sorted = append(sorted, dfs(&node, visited)...)
 	}
-	// add to visited
-	visited[stageId] = true
+	return sorted
+}
 
-	inputs := (*node).GetBaseStage().GetInputStages()
-	// for each neighbor recurse
-	for _, input := range inputs {
-		if ret := dfs(&input, visited); len(ret) > 0 {
-			result = append(result, ret...)
-		}
+// dfs performs a depth-first post-order traversal: all inputs of a node are
+// appended before the node itself, guaranteeing correct execution order.
+func dfs(node *Stage, visited map[string]bool) []Stage {
+	id := (*node).GetBaseStage().StageId
+	if visited[id] {
+		return nil
+	}
+	visited[id] = true
+
+	var result []Stage
+	for _, input := range (*node).GetBaseStage().GetInputStages() {
+		result = append(result, dfs(&input, visited)...)
 	}
 	result = append(result, *node)
 	return result
 }
 
-func (p *Pipeline) topologicalSort() []Stage {
-	// do topological sort of the stages in the pipeline graph
-	visited := map[string]bool{}
-	sorted_stages := []Stage{}
-	for _, node := range p.StageGraph {
-		ret := dfs(&node, visited)
-		sorted_stages = append(sorted_stages, ret...)
-	}
-	slices.Reverse(sorted_stages)
-	return sorted_stages
-}
-
 func NewPipeline(logger *logrus.Logger) *Pipeline {
-	return &Pipeline{
-		Logger: logger,
-	}
+	return &Pipeline{Logger: logger}
 }

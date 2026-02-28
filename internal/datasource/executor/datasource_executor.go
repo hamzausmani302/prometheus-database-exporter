@@ -12,34 +12,22 @@ type IDataSourceExecutor interface {
 }
 
 type DataSourceExecutor struct {
-	logger 	 *logrus.Logger
-	IDataSourceExecutor
-	dataSource *datasource.IDataSource
+	logger        *logrus.Logger
 	dataSourceMap map[string]datasource.IDataSource
-
 }
 
 func (d *DataSourceExecutor) Execute(query schema.Query) (dataframe.DataFrame, error) {
-	var df dataframe.DataFrame
 	if query.IsPipeline() {
-		// execute it as a pipeline
 		pipeline := schema.NewPipeline(d.logger)
 		pipeline.BuildPipeline(query.Pipeline, d.dataSourceMap)
-		stage := pipeline.RunPipeline()
-		if stage != nil {
-			df = (*stage).GetBaseStage().GetOutput()
-		}
-	} else {
-		// execute it as a query
-		ds := d.dataSourceMap[query.DataSource]
-		if err := ds.Connect();err != nil {
-			return dataframe.DataFrame{}, err
-		}
-		df = ds.GetData(datasource.SQLQuery{
-			Query: query.Query,
-		})
+		return pipeline.RunPipeline()
 	}
-	return df, nil
+
+	ds := d.dataSourceMap[query.DataSource]
+	if err := ds.Connect(); err != nil {
+		return dataframe.DataFrame{}, err
+	}
+	return ds.GetData(datasource.SQLQuery{Query: query.Query}), nil
 }
 
 func NewDataSourceExecutor(logger *logrus.Logger, dataSourceMap map[string]datasource.IDataSource) IDataSourceExecutor {
