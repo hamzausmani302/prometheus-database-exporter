@@ -26,6 +26,7 @@ type PostgresReader struct {
 func (reader *PostgresReader) Read(query string) (dataframe.DataFrame, error) {
 	reader.Logger.Infof("Reading the query - %s", query)
 	rows, err := reader.conn.Query(query)
+	fmt.Println(rows)
 	if err != nil {
 		reader.Logger.Error(err)
 		return dataframe.DataFrame{}, err

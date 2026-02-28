@@ -1,6 +1,7 @@
 package datasource
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/go-gota/gota/dataframe"
@@ -50,6 +51,7 @@ func (p *PostgresDataSource) GetData(query IQuery) dataframe.DataFrame {
 func (p *PostgresDataSource) Connect() error {
 	p.logger.Info("Connecting to Postgres Database")
 	if _, err := (*p.Reader).Connect(); err != nil {
+		fmt.Println(err)
 		return err
 	}
 	return nil

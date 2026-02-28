@@ -16,6 +16,28 @@ type Label struct {
 	ColumnName  string `yaml:"columnName"`
 }
 
+// UnmarshalYAML accepts both "columnName" (camelCase) and "column_name" (snake_case)
+// so that configs written with either convention work correctly.
+func (l *Label) UnmarshalYAML(value *yaml.Node) error {
+	type labelAlias struct {
+		Name            string `yaml:"name"`
+		StaticValue     string `yaml:"staticValue"`
+		ColumnName      string `yaml:"columnName"`
+		ColumnNameSnake string `yaml:"column_name"`
+	}
+	var alias labelAlias
+	if err := value.Decode(&alias); err != nil {
+		return err
+	}
+	l.Name = alias.Name
+	l.StaticValue = alias.StaticValue
+	l.ColumnName = alias.ColumnName
+	if l.ColumnName == "" {
+		l.ColumnName = alias.ColumnNameSnake
+	}
+	return nil
+}
+
 func (l Label) IsStaticValue() bool {
 	return l.StaticValue != ""
 }

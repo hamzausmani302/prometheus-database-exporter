@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/go-gota/gota/dataframe"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/schema"
@@ -11,7 +12,6 @@ import (
 	"github.com/hamzausmani302/prometheus-database-exporter/pkg/utils"
 	"github.com/sirupsen/logrus"
 )
-
 
 // prometheus uses float64 or int
 type MetricValue float64
@@ -55,8 +55,9 @@ func (_collector *QueryCollector) assignLabels(cols []string, record []string, q
 					Name:  label.Name,
 					Value: record[indx],
 				}
+			} else {
+				_collector.Logger.Warnf("label %q: column %q not found in query results", label.Name, label.ColumnName)
 			}
-
 		}
 		if commonLabel != nil {
 			commonLabels = append(commonLabels, *commonLabel)
@@ -65,8 +66,19 @@ func (_collector *QueryCollector) assignLabels(cols []string, record []string, q
 	return commonLabels
 }
 
+// metricFingerprint returns a string key uniquely identifying a metric by its name and label set.
+// Used to detect and deduplicate metrics that share the same (name, labels) combination.
+func metricFingerprint(name string, labels []CollectorMetricLabel) string {
+	parts := make([]string, 0, 1+len(labels))
+	parts = append(parts, name)
+	for _, l := range labels {
+		parts = append(parts, l.Name+"="+l.Value)
+	}
+	return strings.Join(parts, "|")
+}
+
 func (_collector *QueryCollector) mapToCollectorMetric(df dataframe.DataFrame, query schema.Query) ([]CollectorMetric[MetricValue], error) {
-	_collector.Logger.Debug("Prmehteus mapping to collector")
+	_collector.Logger.Debug("Prometheus mapping to collector")
 	cols := df.Names()
 	_collector.Logger.Debug(cols)
 	records := df.Copy().Records()
@@ -75,34 +87,47 @@ func (_collector *QueryCollector) mapToCollectorMetric(df dataframe.DataFrame, q
 		return []CollectorMetric[MetricValue]{}, nil
 	}
 
+	// Use a map to deduplicate by (metric name, label set). Last value wins.
+	seen := make(map[string]int)
 	exportMetrics := []CollectorMetric[MetricValue]{}
+
 	for _, metric := range query.Metrics {
 		for i := 1; i < len(records); i++ {
 			// Assign labels
 			labels := _collector.assignLabels(cols, records[i], &query)
 			// Map Object to CollectorMetric
 			idx := slices.Index(cols, metric.Column)
-			if idx != -1 {
-				value, err := strconv.ParseFloat(records[i][idx], 64)
-				if err != nil {
-					_collector.Logger.Errorf("For metric = %s , error converting result %s to float", metric.Name, records[i][idx])
-				} else {
-					exportMetric := CollectorMetric[MetricValue]{
-						Name:   fmt.Sprintf("%s_%s", query.Name, metric.Name),
-						Labels: labels,
-						Value:  MetricValue(value),
-						Type:   metric.Type,
-						Help:   metric.Help,
-					}
-					exportMetrics = append(exportMetrics, exportMetric)
-				}
-			} else {
+			if idx == -1 {
 				_collector.Logger.Warnf("column %s not present in dataframe", metric.Column)
+				continue
+			}
+			value, err := strconv.ParseFloat(records[i][idx], 64)
+			if err != nil {
+				_collector.Logger.Errorf("For metric = %s , error converting result %s to float", metric.Name, records[i][idx])
+				continue
 			}
 
+			metricName := fmt.Sprintf("%s_%s", query.Name, metric.Name)
+			fp := metricFingerprint(metricName, labels)
+
+			exportMetric := CollectorMetric[MetricValue]{
+				Name:   metricName,
+				Labels: labels,
+				Value:  MetricValue(value),
+				Type:   metric.Type,
+				Help:   metric.Help,
+			}
+
+			if pos, duplicate := seen[fp]; duplicate {
+				_collector.Logger.Debugf("duplicate metric %q with same label set — keeping last value", metricName)
+				exportMetrics[pos] = exportMetric
+			} else {
+				seen[fp] = len(exportMetrics)
+				exportMetrics = append(exportMetrics, exportMetric)
+			}
 		}
 	}
-	_collector.Logger.Debug(`________________Output Metrics______________\n__________________________________________`)
+	_collector.Logger.Debug(`________________Output Metrics______________`)
 	_collector.Logger.Debug(exportMetrics)
 	_collector.Logger.Debug(`__________________________________________`)
 
@@ -134,8 +159,8 @@ func (_collector *QueryCollector) scrapeMetric(metrics []CollectorMetric[MetricV
 
 func NewCollector(logger *logrus.Logger, store *cache.ICache, queries []*schema.Query) ICollector[MetricValue] {
 	return &QueryCollector{
-		Logger:  logger,
+		Logger:    logger,
 		DataStore: store,
-		Queries: queries,
+		Queries:   queries,
 	}
 }

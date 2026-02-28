@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -26,7 +27,9 @@ func main() {
 	if app.IsApiEnabled() {
 		go app.StartApi()
 	}
-	
+	go func() {
+    	http.ListenAndServe("localhost:6060", nil)
+	}()
 	go func() {
 		// Listens for intended termination and terminate the memory addresses
 		rootLogger.Info("triggered executing")
