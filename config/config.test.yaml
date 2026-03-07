@@ -26,16 +26,135 @@ dataSourceConfig:
         connectionString: "postgresql://postgres:password@localhost:5433/exporter?sslmode=disable"
 
 queries:
-  - name: product_inventory
+  # ── Simple query 1 ──────────────────────────────────────────────────────────
+  # Single-row count — deterministic, used in E2E assertion (live_well_count=3).
+  - name: live_well_count
     dataSource: postgres-test
-    query: "SELECT task_status, COUNT(*) AS product_count FROM products GROUP BY task_status"
+    query: >-
+      SELECT COUNT(*) AS live_well_count
+      FROM t_well
+      WHERE is_live = true AND to_load = true
+    queryRefreshTime: 5
+    queryTimeout: 10
+    labels: []
+    metrics:
+      - name: live_well_count
+        type: GAUGE
+        help: "Total number of live wells included in metric exports"
+        column: live_well_count
+
+  # ── Simple query 2 ──────────────────────────────────────────────────────────
+  # Mudlog delay in seconds per live well, labelled by well and current rig.
+  # ROW_NUMBER picks the most-recent rig assignment per well.
+  - name: well_mudlog_delay_seconds
+    dataSource: postgres-test
+    query: |
+      SELECT well_name, well_id, rig_name,
+             EXTRACT(EPOCH FROM NOW() AT TIME ZONE 'UTC' - ts_last_mudlog)::int AS delay_seconds
+      FROM (
+        SELECT tw.well_name, tw.well_id, tr.rig_name, tw.ts_last_mudlog,
+               ROW_NUMBER() OVER (PARTITION BY tw.id_t_well ORDER BY op.start_date DESC) AS rn
+        FROM t_well tw
+        JOIN t_operation op ON tw.id_t_well = op.id_t_well
+        JOIN t_rig       tr ON op.id_t_rig  = tr.id_t_rig
+        WHERE tw.is_live = true AND tw.to_load = true
+      ) t
+      WHERE rn = 1
     queryRefreshTime: 5
     queryTimeout: 10
     labels:
-      - name: task_status
-        columnName: task_status
+      - name: well_name
+        columnName: well_name
+      - name: well_id
+        columnName: well_id
+      - name: rig_name
+        columnName: rig_name
     metrics:
-      - name: product_count
+      - name: well_mudlog_delay_seconds
         type: GAUGE
-        help: "Number of products per task status"
-        column: product_count
+        help: "Seconds since the last mudlog data was received for this well"
+        column: delay_seconds
+
+  # ── Simple query 3 ──────────────────────────────────────────────────────────
+  # Total DDR duration per live well in a single query.
+  # Cross-validates the pipeline query below — both should return the same values.
+  - name: well_ddr_duration_seconds
+    dataSource: postgres-test
+    query: |
+      SELECT tw.well_name, tw.well_id, tr.rig_name,
+             COALESCE(SUM(d.duration_sec), 0) AS total_ddr_duration_seconds
+      FROM (
+        SELECT tw.id_t_well, tw.well_name, tw.well_id, tr.rig_name
+        FROM t_well tw
+        JOIN t_operation op ON tw.id_t_well = op.id_t_well
+        JOIN t_rig       tr ON op.id_t_rig  = tr.id_t_rig
+        WHERE tw.is_live = true AND tw.to_load = true
+          AND (
+            SELECT COUNT(*) FROM t_operation op2
+            WHERE op2.id_t_well = tw.id_t_well AND op2.start_date > op.start_date
+          ) = 0
+      ) tw
+      LEFT JOIN t_ddr d ON tw.id_t_well = d.id_t_well
+      GROUP BY tw.well_name, tw.well_id, tr.rig_name
+    queryRefreshTime: 5
+    queryTimeout: 10
+    labels:
+      - name: well_name
+        columnName: well_name
+      - name: well_id
+        columnName: well_id
+      - name: rig_name
+        columnName: rig_name
+    metrics:
+      - name: well_ddr_duration_seconds
+        type: GAUGE
+        help: "Total DDR activity duration in seconds for this well (single query)"
+        column: total_ddr_duration_seconds
+
+  # ── Pipeline query ───────────────────────────────────────────────────────────
+  # Stage 1 (extract): fetch all live+loaded wells with their active rig.
+  # Stage 2 (foreach): for each well row, substitute {{id_t_well}} and sum DDR.
+  # The foreach stage automatically merges well_name/well_id/rig_name from the
+  # input row into the result DataFrame, so labels are available for Prometheus.
+  - name: total_ddr_duration_seconds_pipeline
+    dataSource: postgres-test
+    queryRefreshTime: 5
+    queryTimeout: 30
+    pipeline:
+      - stageId: active_wells
+        stageType: extract
+        dataSource: postgres-test
+        query: |
+          SELECT id_t_well, well_name, well_id, rig_name
+          FROM (
+            SELECT tw.id_t_well, tw.well_name, tw.well_id, tr.rig_name,
+                   ROW_NUMBER() OVER (PARTITION BY tw.id_t_well ORDER BY op.start_date DESC) AS rn
+            FROM t_well tw
+            JOIN t_operation op ON tw.id_t_well = op.id_t_well
+            JOIN t_rig       tr ON op.id_t_rig  = tr.id_t_rig
+            WHERE tw.is_live = true AND tw.to_load = true
+          ) t
+          WHERE rn = 1
+
+      - stageId: ddr_per_well
+        stageType: foreach
+        dataSource: postgres-test
+        inputStageIds:
+          - active_wells
+        query: >-
+          SELECT COALESCE(SUM(duration_sec), 0) AS total_ddr_duration_seconds
+          FROM t_ddr
+          WHERE id_t_well = {{id_t_well}}
+
+    labels:
+      - name: well_name
+        columnName: well_name
+      - name: well_id
+        columnName: well_id
+      - name: rig_name
+        columnName: rig_name
+    metrics:
+      - name: total_ddr_duration_seconds_pipeline
+        type: GAUGE
+        help: "Total DDR activity duration in seconds (computed via pipeline)"
+        column: total_ddr_duration_seconds

@@ -1,11 +1,11 @@
 enableApi: true
-enableCollector: false
+enableCollector: true
 schedulerConfig:
   storage: "memory" # enum [redis, sqlite, postgres, memory]
   metadata:
     connectionDetails: {}
 storeConfig:
-  type: "redis" # enum [Local, Redis] can add more implementations later by implemnting the DataStore interface
+  type: "local" # enum [Local, Redis] can add more implementations later by implemnting the DataStore interface
   metadata:
     connectionDetails:
       host: localhost
@@ -23,24 +23,67 @@ dataSourceConfig:
     metadata:
       connectionDetails:
         host: localhost
-        port: 5432
+        port: 5437
         username: postgres
-        password: password
-        connectionString: "postgresql://postgres:password@localhost:5432/id3_dashboard?sslmode=disable"
+        password: taXY!D,zGWSA6eBPIvvaQ
+        connectionString: "postgresql://postgres:taXY!D,zGWSA6eBPIvvaQ@localhost:5437/id3_dashboard?sslmode=disable"
 
 queries:
-  - name: taxi_rides
+  - name: id3_data_quality_summary
     dataSource: postgres-datastore
-    query: "select 'test1' AS well_id, 10 AS total_wells from t_well where to_load = false"
-    queryRefreshTime: 30
-    queryTimeout: 5
+    query: "with latest_analysis as (select id_t_inference_analysis, id_t_well from t_inference_analysis where    ts_last_run is not null and    (id_t_well, ts_creation) in (    select id_t_well, max(ts_creation)    from t_inference_analysis    where        ts_last_run is not null    group by id_t_well))select    tidqae.id_t_inference_analysis,    tw.id_t_well, tw.t_mudlog_row_count as t_mudlog_row_count,    coalesce(t_mudlog_column_name, 'ALL') as t_mudlog_column_name,    coalesce(anomaly_type, 'ALL') as anomaly_type,    coalesce(sum(anomaly_count), 0) as anomaly_count from t_well tw join    t_inference_analysis tia on        tw.id_t_well = tia.id_t_well    join t_inference_data_quality_analysis_entry tidqae on        tidqae.id_t_inference_analysis = tia.id_t_inference_analysis    join latest_analysis la on        tidqae.id_t_inference_analysis = la.id_t_inference_analysis group by    tidqae.id_t_inference_analysis,    tw.id_t_well,         cube(t_mudlog_column_name, anomaly_type) order by tidqae.id_t_inference_analysis"
+    queryRefreshTime: 60
+    queryTimeout: 45
     labels:
-      - name: database
-        staticValue: id3_dashboard1
-      - name: well_id
-        columnName: well_id
+      - name: database_name
+        staticValue: id3_dashboard
+      - name: id_t_well
+        columnName: id_t_well
+      - name: id_t_inference_analysis
+        columnName: id_t_inference_analysis
+      - name: t_mudlog_column_name
+        column_name: t_mudlog_column_name
+      - name: anomaly_type
+        column_name: anomaly_type
+      - name: anomaly_count
+        column_name: anomaly_count
     metrics:
-      - name: total_wells # metric will be taxi_rides_total_active_rides in prometheus
+      - name: t_mudlog_row_count # metric will be taxi_rides_total_active_rides in prometheus
         type: GAUGE
-        help: "Total number of active rides"
-        column: total_wells
+        help: "Count of mudlog rows"
+        column: t_mudlog_row_count
+      - name: anomaly_count
+        type: GAUGE
+        help: "Number of anomalies"
+        column: anomaly_count
+
+  # - name: taxi_rides12
+  #   dataSource: postgres-datastore
+  #   query: "select 'test2' AS well_id, 10 AS total_wells from t_well where to_load = false"
+  #   queryRefreshTime: 60
+  #   queryTimeout: 5
+  #   labels:
+  #     - name: database
+  #       staticValue: id3_dashboard1
+  #     - name: well_id1
+  #       columnName: well_id
+  #   metrics:
+  #     - name: total_wells1 # metric will be taxi_rides_total_active_rides in prometheus
+  #       type: GAUGE
+  #       help: "Total number of active rides"
+  #       column: total_wells
+  # - name: taxi_rides123
+  #   dataSource: postgres-datastore
+  #   query: "select 'test2' AS well_id, 10 AS total_wells from t_well where to_load = false"
+  #   queryRefreshTime: 40
+  #   queryTimeout: 5
+  #   labels:
+  #     - name: database
+  #       staticValue: id3_dashboard1
+  #     - name: well_id1
+  #       columnName: well_id
+  #   metrics:
+  #     - name: total_wells1 # metric will be taxi_rides_total_active_rides in prometheus
+  #       type: GAUGE
+  #       help: "Total number of active rides"
+  #       column: total_wells

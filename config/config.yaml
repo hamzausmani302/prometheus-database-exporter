@@ -1,0 +1,657 @@
+enableApi: true
+enableCollector: true
+schedulerConfig:
+  storage: "memory"
+  metadata:
+    connectionDetails: {}
+storeConfig:
+  type: "local"
+  metadata:
+    connectionDetails: {}
+collectorConfig:
+  type: prometheus
+  metadata: {}
+serverConfig:
+  port: 2112
+  numWorkers: 5
+dataSourceConfig:
+  - name: id3_dashboard
+    type: SQL
+    metadata:
+      connectionDetails:
+        host: localhost
+        port: 5437
+        username: postgres
+        password: W1Ni!4oNI!82Wqs!kd8mx0r!
+        connectionString: "postgresql://postgres:W1Ni!4oNI!82Wqs!kd8mx0r!@localhost:5434/id3_dashboard"
+
+  - name: orchestrator
+    type: SQL
+    metadata:
+      connectionDetails:
+        host: localhost
+        port: 5437
+        username: postgres
+        password: W1Ni!4oNI!82Wqs!kd8mx0r!
+        connectionString: "postgresql://postgres:W1Ni!4oNI!82Wqs!kd8mx0r!@localhost:5434/orchestrator"
+
+  - name: id3_benchmarking_kpi
+    type: SQL
+    metadata:
+      connectionDetails:
+        host: localhost
+        port: 5437
+        username: postgres
+        password: W1Ni!4oNI!82Wqs!kd8mx0r!
+        connectionString: "postgresql://postgres:W1Ni!4oNI!82Wqs!kd8mx0r!@localhost:5434/id3_benchmarking_kpi"
+
+queries:
+  - name: id3_mudlog_delay
+    dataSource: id3_dashboard
+    query: "select well_name, well_id, rig_name, extract(epoch from now() at time zone 'utc' - ts_last_mudlog) as mudlog_seconds_delay from (select tw.well_id, tw.well_name, tw.ts_last_mudlog, ROW_NUMBER() OVER (PARTITION BY tw.id_t_well ORDER BY top.start_date desc) AS rig_order, tr.* from t_well tw left join t_operation top on tw.id_t_well = top.id_t_well left join t_rig tr on tr.id_t_rig = top.id_t_rig where tw.to_load is true and tw.is_live is true) as t where rig_order = 1"
+    queryRefreshTime: 60
+    queryTimeout: 30
+    labels:
+      - name: well_id
+        columnName: well_id
+      - name: rig_name
+        columnName: rig_name
+      - name: well_name
+        columnName: well_name
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: mudlog_seconds_delay
+        type: GAUGE
+        help: "mudlog delay in seconds"
+        column: mudlog_seconds_delay
+
+  - name: id3_ddr_delay
+    dataSource: id3_dashboard
+    query: "select t.well_name, t.well_id, t.ddr_seconds_delay, top.rig_name from (select t_well.id_t_well, well_name, well_id, case when max(td.ts_end_utc) is not null then extract(epoch from now() at time zone 'utc' - max(td.ts_end_utc)) else null end as ddr_seconds_delay from (select * from t_well where is_live is true and to_load is true) t_well left join t_ddr td on td.id_t_well = t_well.id_t_well group by well_name, well_id, t_well.id_t_well) t left join (select top1.*, tr.* , ROW_NUMBER() OVER (PARTITION BY top1.id_t_well ORDER BY top1.start_date desc) as rig_no from t_operation top1 join t_rig tr on tr.id_t_rig = top1.id_t_rig ) top on top.id_t_well = t.id_t_well where top.rig_no = 1"
+    queryRefreshTime: 60
+    queryTimeout: 30
+    labels:
+      - name: well_id
+        columnName: well_id
+      - name: well_name
+        columnName: well_name
+      - name: rig_name
+        columnName: rig_name
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: ddr_seconds_delay
+        type: GAUGE
+        help: "ddr delay in seconds"
+        column: ddr_seconds_delay
+
+  - name: id3_running_tasks
+    dataSource: orchestrator
+    query: "SELECT t.run_type as algorithms_profile, coalesce(count(tq.id_task), 0) as running_tasks from task t left join task_queue tq on t.id_task = tq.id_task AND tq.is_running = true group by t.run_type"
+    queryRefreshTime: 30
+    queryTimeout: 30
+    labels:
+      - name: algorithms_profile
+        columnName: algorithms_profile
+      - name: database_name
+        staticValue: orchestrator
+    metrics:
+      - name: running_tasks
+        type: GAUGE
+        help: "the number of runing tasks"
+        column: running_tasks
+
+  - name: id3_queued_tasks
+    dataSource: orchestrator
+    query: "SELECT t.run_type as algorithms_profile, coalesce(count(tq.id_task), 0) as queued_tasks from task t left join task_queue tq on t.id_task = tq.id_task AND tq.is_running = false group by t.run_type"
+    queryRefreshTime: 30
+    queryTimeout: 30
+    labels:
+      - name: algorithms_profile
+        columnName: algorithms_profile
+      - name: database_name
+        staticValue: orchestrator
+    metrics:
+      - name: queued_tasks
+        type: GAUGE
+        help: "the number of queued tasks"
+        column: queued_tasks
+
+  - name: id3_live_wells
+    dataSource: id3_dashboard
+    query: "select count(*) as live_wells_count from t_well where is_live is true and to_load is true"
+    queryRefreshTime: 60
+    queryTimeout: 30
+    labels:
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: live_wells_count
+        type: GAUGE
+        help: "the number of live wells"
+        column: live_wells_count
+
+  - name: id3_wells
+    dataSource: id3_dashboard
+    query: "select count(*) as wells_count from t_well where to_load is true"
+    queryRefreshTime: 60
+    queryTimeout: 30
+    labels:
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: wells_count
+        type: GAUGE
+        help: "the number of wells"
+        column: wells_count
+
+  - name: id3_benchmarking_wells
+    dataSource: id3_benchmarking_kpi
+    query: "select count(*) as benchmarking_wells_count from external_wells"
+    queryRefreshTime: 60
+    queryTimeout: 30
+    labels:
+      - name: database_name
+        staticValue: id3_benchmarking
+    metrics:
+      - name: benchmarking_wells_count
+        type: GAUGE
+        help: "the number of benchmarking wells"
+        column: benchmarking_wells_count
+
+  - name: id3_computations_stats
+    dataSource: id3_dashboard
+    query: "select t.well_name , t.well_id, t.computation_profile, t.last_computation_duration_sec,last_memory_max_megabyte, t.rig_name from ( select tr.rig_name, ROW_NUMBER() OVER (PARTITION BY top.id_t_well,twc.computation_profile order by top.start_date desc) as rig_no, tw.id_t_well , tw.well_name, tw.well_id, twc.computation_profile, twc.last_computation_duration_sec, twc.last_memory_max_megabyte from t_well tw left join t_well_computational_stats twc on tw.id_t_well = twc.id_t_well left join t_operation top on top.id_t_well = tw.id_t_well left join t_rig tr on top.id_t_rig = tr.id_t_rig where tw.is_live is true and tw.to_load is true ) t where t.rig_no = 1;"
+    queryRefreshTime: 60
+    queryTimeout: 30
+    labels:
+      - name: well_id
+        columnName: well_id
+      - name: well_name
+        columnName: well_name
+      - name: rig_name
+        columnName: rig_name
+      - name: computation_profile
+        columnName: computation_profile
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: last_computation_duration_sec
+        type: GAUGE
+        help: "last computation duration in seconds"
+        column: last_computation_duration_sec
+      - name: last_memory_max_megabyte
+        type: GAUGE
+        help: "last memory max in megabyte"
+        column: last_memory_max_megabyte
+
+  - name: id3_ddr_missing_lv_0
+    dataSource: id3_dashboard
+    query: "select  r.well_name, r.well_id, r.ddr_missing_lv_0, r.rig_name from ( select top.rig_name,t.*,ROW_NUMBER() OVER (PARTITION BY t.id_t_well ORDER BY top.start_date desc) as rigno from (select tw.id_t_well, tw.well_name, tw.well_id, count(td.*) as ddr_missing_lv_0 from t_well tw left join t_ddr td on tw.id_t_well = td.id_t_well and td.source_code_level_0 is null where tw.is_live is true and tw.to_load is true group by tw.well_name, tw.well_id, tw.id_t_well) t left join (select * from t_operation top1 join t_rig tr on top1.id_t_rig = tr.id_t_rig ) top on t.id_t_well = top.id_t_well ) r where rigno = 1;"
+    queryRefreshTime: 180
+    queryTimeout: 30
+    labels:
+      - name: well_id
+        columnName: well_id
+      - name: well_name
+        columnName: well_name
+      - name: rig_name
+        columnName: rig_name
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: ddr_missing_lv_0
+        type: GAUGE
+        help: "the number of missing ddr level 0"
+        column: ddr_missing_lv_0
+
+  - name: id3_ddr_missing_lv_1
+    dataSource: id3_dashboard
+    query: "select r.well_name, r.well_id, r.ddr_missing_lv_1, r.rig_name from ( select top.rig_name,t.*,ROW_NUMBER() OVER (PARTITION BY t.id_t_well ORDER BY top.start_date desc) as rigno from (select tw.id_t_well, tw.well_name, tw.well_id, count(td.*) as ddr_missing_lv_1 from t_well tw left join t_ddr td on tw.id_t_well = td.id_t_well and td.source_code_level_1 is null where tw.is_live is true and tw.to_load is true group by tw.well_name, tw.well_id, tw.id_t_well) t left join (select * from t_operation top1 join t_rig tr on top1.id_t_rig = tr.id_t_rig ) top on t.id_t_well = top.id_t_well ) r where rigno = 1;"
+    queryRefreshTime: 180
+    queryTimeout: 30
+    labels:
+      - name: well_id
+        columnName: well_id
+      - name: well_name
+        columnName: well_name
+      - name: rig_name
+        columnName: rig_name
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: ddr_missing_lv_1
+        type: GAUGE
+        help: "the number of missing ddr level 1"
+        column: ddr_missing_lv_1
+
+  - name: id3_ddr_missing_lv_2
+    dataSource: id3_dashboard
+    query: "select r.well_name, r.well_id, r.ddr_missing_lv_2, r.rig_name from ( select top.rig_name,t.*,ROW_NUMBER() OVER (PARTITION BY t.id_t_well ORDER BY top.start_date desc) as rigno from (select tw.id_t_well, tw.well_name, tw.well_id, count(td.*) as ddr_missing_lv_2 from t_well tw left join t_ddr td on tw.id_t_well = td.id_t_well and td.source_code_level_2 is null where tw.is_live is true and tw.to_load is true group by tw.well_name, tw.well_id, tw.id_t_well) t left join (select * from t_operation top1 join t_rig tr on top1.id_t_rig = tr.id_t_rig ) top on t.id_t_well = top.id_t_well ) r where rigno = 1;"
+    queryRefreshTime: 180
+    queryTimeout: 30
+    labels:
+      - name: well_id
+        columnName: well_id
+      - name: well_name
+        columnName: well_name
+      - name: rig_name
+        columnName: rig_name
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: ddr_missing_lv_2
+        type: GAUGE
+        help: "the number of missing ddr level 2"
+        column: ddr_missing_lv_2
+
+  - name: id3_ddr_missing_lv_3
+    dataSource: id3_dashboard
+    query: "select r.well_name, r.well_id, r.ddr_missing_lv_3, r.rig_name from ( select top.rig_name,t.*,ROW_NUMBER() OVER (PARTITION BY t.id_t_well ORDER BY top.start_date desc) as rigno from (select tw.id_t_well, tw.well_name, tw.well_id, count(td.*) as ddr_missing_lv_3 from t_well tw left join t_ddr td on tw.id_t_well = td.id_t_well and td.source_code_level_3 is null where tw.is_live is true and tw.to_load is true group by tw.id_t_well, tw.well_name, tw.well_id) t left join (select * from t_operation top1 join t_rig tr on top1.id_t_rig = tr.id_t_rig ) top on t.id_t_well = top.id_t_well ) r where rigno = 1;"
+    queryRefreshTime: 180
+    queryTimeout: 30
+    labels:
+      - name: well_id
+        columnName: well_id
+      - name: well_name
+        columnName: well_name
+      - name: rig_name
+        columnName: rig_name
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: ddr_missing_lv_3
+        type: GAUGE
+        help: "the number of missing ddr level 3"
+        column: ddr_missing_lv_3
+
+  - name: id3_ddr_unmapped_lv_0
+    dataSource: id3_dashboard
+    query: "select r.well_name, r.well_id, r.ddr_unmapped_lv_0, r.rig_name from ( select top.rig_name,t.*,ROW_NUMBER() OVER (PARTITION BY t.id_t_well ORDER BY top.start_date desc) as rigno from ( select tw.id_t_well, tw.well_name, tw.well_id, count(td.*) as ddr_unmapped_lv_0 from t_well tw left join t_ddr td on tw.id_t_well = td.id_t_well and td.source_code_level_0 is not null and td.id_t_id3_code_level_0 is null where tw.is_live is true and tw.to_load is true group by tw.id_t_well, tw.well_name, tw.well_id ) t left join (select * from t_operation top1 join t_rig tr on top1.id_t_rig = tr.id_t_rig ) top on t.id_t_well = top.id_t_well ) r where rigno = 1;"
+    queryRefreshTime: 180
+    queryTimeout: 30
+    labels:
+      - name: well_id
+        columnName: well_id
+      - name: well_name
+        columnName: well_name
+      - name: rig_name
+        columnName: rig_name
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: ddr_unmapped_lv_0
+        type: GAUGE
+        help: "the number of unmapped ddr level 0"
+        column: ddr_unmapped_lv_0
+
+  - name: id3_ddr_unmapped_lv_1
+    dataSource: id3_dashboard
+    query: "select r.well_name, r.well_id, r.ddr_unmapped_lv_1, r.rig_name from ( select top.rig_name,t.*,ROW_NUMBER() OVER (PARTITION BY t.id_t_well ORDER BY top.start_date desc) as rigno from ( select tw.id_t_well, tw.well_name, tw.well_id, count(td.*) as ddr_unmapped_lv_1 from t_well tw left join t_ddr td on tw.id_t_well = td.id_t_well and td.source_code_level_1 is not null and td.id_t_id3_code_level_1 is null where tw.is_live is true and tw.to_load is true group by tw.well_name, tw.well_id, tw.id_t_well ) t left join (select * from t_operation top1 join t_rig tr on top1.id_t_rig = tr.id_t_rig ) top on t.id_t_well = top.id_t_well ) r where rigno = 1"
+    queryRefreshTime: 180
+    queryTimeout: 30
+    labels:
+      - name: well_id
+        columnName: well_id
+      - name: well_name
+        columnName: well_name
+      - name: rig_name
+        columnName: rig_name
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: ddr_unmapped_lv_1
+        type: GAUGE
+        help: "the number of unmapped ddr level 1"
+        column: ddr_unmapped_lv_1
+
+  - name: id3_ddr_unmapped_lv_2
+    dataSource: id3_dashboard
+    query: "select r.well_name, r.well_id, r.ddr_unmapped_lv_2, r.rig_name from ( select top.rig_name,t.*,ROW_NUMBER() OVER (PARTITION BY t.id_t_well ORDER BY top.start_date desc) as rigno from ( select tw.id_t_well, tw.well_name, tw.well_id, count(td.*) as ddr_unmapped_lv_2 from t_well tw left join t_ddr td on tw.id_t_well = td.id_t_well and td.source_code_level_2 is not null and td.id_t_id3_code_level_2 is null where tw.is_live is true and tw.to_load is true group by tw.well_name, tw.well_id, tw.id_t_well ) t left join (select * from t_operation top1 join t_rig tr on top1.id_t_rig = tr.id_t_rig ) top on t.id_t_well = top.id_t_well ) r where rigno = 1;"
+    queryRefreshTime: 180
+    queryTimeout: 30
+    labels:
+      - name: well_id
+        columnName: well_id
+      - name: well_name
+        columnName: well_name
+      - name: rig_name
+        columnName: rig_name
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: ddr_unmapped_lv_2
+        type: GAUGE
+        help: "the number of unmapped ddr level 2"
+        column: ddr_unmapped_lv_2
+
+  - name: id3_ddr_unmapped_lv_3
+    dataSource: id3_dashboard
+    query: "select r.well_name, r.well_id, r.ddr_unmapped_lv_3, r.rig_name from ( select top.rig_name,t.*,ROW_NUMBER() OVER (PARTITION BY t.id_t_well ORDER BY top.start_date desc) as rigno from ( select tw.id_t_well, tw.well_name, tw.well_id, count(td.*) as ddr_unmapped_lv_3 from t_well tw left join t_ddr td on tw.id_t_well = td.id_t_well and td.source_code_level_3 is not null and td.id_t_id3_code_level_3 is null where tw.is_live is true and tw.to_load is true group by tw.well_name, tw.well_id, tw.id_t_well ) t left join (select * from t_operation top1 join t_rig tr on top1.id_t_rig = tr.id_t_rig ) top on t.id_t_well = top.id_t_well ) r where rigno = 1;"
+    queryRefreshTime: 180
+    queryTimeout: 30
+    labels:
+      - name: well_id
+        columnName: well_id
+      - name: well_name
+        columnName: well_name
+      - name: rig_name
+        columnName: rig_name
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: ddr_unmapped_lv_3
+        type: GAUGE
+        help: "the number of unmapped ddr level 3"
+        column: ddr_unmapped_lv_3
+
+  - name: id3_computation_delay
+    dataSource: id3_dashboard
+    query: "select t.well_name, t.well_id, t.computation_profile, t.computation_seconds_delay, t.rig_name from ( select tw.well_name, tw.id_t_well,top.rig_name, tw.well_id, twc.computation_profile, extract(epoch from now() at time zone 'utc' - twc.last_computation_run_utc) as computation_seconds_delay , ROW_NUMBER() OVER (PARTITION BY tw.id_t_well , twc.computation_profile ORDER BY top.start_date desc) as rig_no from t_well tw left join t_well_computational_stats twc on tw.id_t_well = twc.id_t_well left join (select * from t_operation top1 join t_rig tr on top1.id_t_rig = tr.id_t_rig ) top on tw.id_t_well = top.id_t_well where is_live is true and to_load is true ) t where t.rig_no = 1"
+    queryRefreshTime: 60
+    queryTimeout: 30
+    labels:
+      - name: well_id
+        columnName: well_id
+      - name: well_name
+        columnName: well_name
+      - name: rig_name
+        columnName: rig_name
+      - name: computation_profile
+        columnName: computation_profile
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: computation_seconds_delay
+        type: GAUGE
+        help: "computation delay in seconds"
+        column: computation_seconds_delay
+
+  - name: id3_unrecognized_casing
+    dataSource: id3_dashboard
+    query: "select r.well_name, r.well_id , r.unrecognized_casings , r.rig_name from ( select ROW_NUMBER() OVER (PARTITION BY t.id_t_well ORDER BY top.start_date desc) as rig_no ,top.rig_name , t.* from ( select tw.id_t_well, tw.well_name, tw.well_id, count(tc.id_t_casing) as unrecognized_casings from t_well tw left join t_casing tc on tw.id_t_well = tc.id_t_well and (tc.ts_start_utc is null or tc.ts_end_utc is null) where is_live is true and to_load is true group by tw.well_name, tw.well_id, tw.id_t_well ) t left join (select * from t_operation top1 join t_rig tr on top1.id_t_rig = tr.id_t_rig ) top on t.id_t_well = top.id_t_well ) r where r.rig_no = 1"
+    queryRefreshTime: 180
+    queryTimeout: 30
+    labels:
+      - name: well_id
+        columnName: well_id
+      - name: well_name
+        columnName: well_name
+      - name: rig_name
+        columnName: rig_name
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: unrecognized_casings
+        type: GAUGE
+        help: "the number of unrecognized casings"
+        column: unrecognized_casings
+
+  - name: id3_unrecognized_merged_phases
+    dataSource: id3_dashboard
+    query: "select r.well_name, r.well_id, r.unrecognized_merged_phases , r.rig_name from ( select *, ROW_NUMBER() OVER (PARTITION BY t.id_t_well ORDER BY top.start_date desc) as rig_no from ( select tw.id_t_well , tw.well_name, tw.well_id, count(tp.id_t_phase) as unrecognized_merged_phases from t_well tw left join t_phase tp on tw.id_t_well = tp.id_t_well and tp.id_t_phase_merged is null where is_live is true and to_load is true group by tw.well_name, tw.well_id, tw.id_t_well ) t left join (select * from t_operation top1 join t_rig tr on top1.id_t_rig = tr.id_t_rig ) top on t.id_t_well = top.id_t_well ) r where r.rig_no = 1"
+    queryRefreshTime: 180
+    queryTimeout: 30
+    labels:
+      - name: well_id
+        columnName: well_id
+      - name: well_name
+        columnName: well_name
+      - name: rig_name
+        columnName: rig_name
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: unrecognized_merged_phases
+        type: GAUGE
+        help: "the number of unrecognized merged phases"
+        column: unrecognized_merged_phases
+
+  - name: id3_ddr_sensors_coverage
+    dataSource: id3_dashboard
+    query: "select r.well_name, r.well_id, r.ddr_sensors_coverage ,r.rig_name from ( select *,ROW_NUMBER() OVER (PARTITION BY t.id_t_well ORDER BY top.start_date desc) as rig_no from ( select tw.id_t_well, tw.well_name, tw.well_id, coalesce(sum(td.t_mudlog_row_count*5)/sum(td.duration_sec)::numeric, 0) as ddr_sensors_coverage from t_well tw left join t_ddr td on tw.id_t_well = td.id_t_well where is_live is true and to_load is true group by tw.id_t_well, tw.well_name, tw.well_id ) t left join (select * from t_operation top1 join t_rig tr on top1.id_t_rig = tr.id_t_rig ) top on t.id_t_well = top.id_t_well ) r where r.rig_no = 1"
+    queryRefreshTime: 180
+    queryTimeout: 30
+    labels:
+      - name: well_id
+        columnName: well_id
+      - name: rig_name
+        columnName: rig_name
+      - name: well_name
+        columnName: well_name
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: ddr_sensors_coverage
+        type: GAUGE
+        help: "the coverage of sensors over ddr, sensors duration / ddr duration computed over ddr rows"
+        column: ddr_sensors_coverage
+
+  - name: id3_phase_sensors_coverage
+    dataSource: id3_dashboard
+    query: "select r.well_name, r.well_id , r.phase_sensors_coverage, r.rig_name from ( select *, ROW_NUMBER() OVER (PARTITION BY t.id_t_well ORDER BY top.start_date desc) as rig_no from ( select tw.id_t_well, tw.well_name, tw.well_id, coalesce(sum(tp.t_mudlog_row_count*5)/sum(case when ts_end_utc is null then extract(epoch from now() at time zone 'utc' - ts_start_utc) else extract(epoch from ts_end_utc - ts_start_utc) end)::numeric, 0) as phase_sensors_coverage from t_well tw left join t_phase tp on tw.id_t_well = tp.id_t_well where is_live is true and to_load is true group by tw.well_name, tw.well_id, tw.id_t_well ) t left join (select * from t_operation top1 join t_rig tr on top1.id_t_rig = tr.id_t_rig ) top on t.id_t_well = top.id_t_well ) r where r.rig_no = 1"
+    queryRefreshTime: 180
+    queryTimeout: 30
+    labels:
+      - name: well_id
+        columnName: well_id
+      - name: well_name
+        columnName: well_name
+      - name: rig_name
+        columnName: rig_name
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: phase_sensors_coverage
+        type: GAUGE
+        help: "the coverage of sensors over phase, sensors duration / phase duration computed over phase rows"
+        column: phase_sensors_coverage
+
+  - name: id3_low_quality_stand
+    dataSource: id3_dashboard
+    query: "select r.well_name, r.well_id, r.phase_type, r.stand_count, r.rig_name from ( select t.*, top.rig_name , ROW_NUMBER() OVER (PARTITION BY t.id_t_well, t.phase_type ORDER BY top.start_date desc) as rig_no from ( select tw.id_t_well, tw.well_name, tw.well_id, ts.phase_type, count(*) as stand_count from t_well tw left join t_stand ts on tw.id_t_well = ts.id_t_well where is_live is true and to_load is true group by tw.id_t_well, tw.well_name, tw.well_id, ts.phase_type ) t left join (select * from t_operation top1 join t_rig tr on top1.id_t_rig = tr.id_t_rig ) top on t.id_t_well = top.id_t_well ) r where r.rig_no = 1"
+    queryRefreshTime: 180
+    queryTimeout: 30
+    labels:
+      - name: well_id
+        columnName: well_id
+      - name: well_name
+        columnName: well_name
+      - name: rig_name
+        columnName: rig_name
+      - name: phase_type
+        columnName: phase_type
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: stand_count
+        type: GAUGE
+        help: "the number of low quality stand"
+        column: stand_count
+
+  - name: id3_spikes_duration_seconds
+    dataSource: id3_dashboard
+    query: "select r.well_name, r.well_id, r.spikes_duration_seconds , r.rig_name from ( select *, ROW_NUMBER() OVER (PARTITION BY t.id_t_well ORDER BY top.start_date desc) as rig_no from ( select tw.id_t_well, tw.well_name, tw.well_id, coalesce(sum(extract(epoch from ts_end_utc - ts_start_utc)), 0) as spikes_duration_seconds from t_well tw left join t_mudlog_clean tc on tw.id_t_well = tc.id_t_well where is_live is true and to_load is true group by tw.well_name, tw.well_id, tw.id_t_well ) t left join (select * from t_operation top1 join t_rig tr on top1.id_t_rig = tr.id_t_rig ) top on t.id_t_well = top.id_t_well ) r where r.rig_no = 1"
+    queryRefreshTime: 180
+    queryTimeout: 30
+    labels:
+      - name: well_id
+        columnName: well_id
+      - name: well_name
+        columnName: well_name
+      - name: rig_name
+        columnName: rig_name
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: spikes_duration_seconds
+        type: GAUGE
+        help: "the duration of spikes in seconds"
+        column: spikes_duration_seconds
+
+  - name: id3_computation_errors
+    dataSource: id3_dashboard
+    query: "select 1 as computation_errors, w.well_name, twcs.computation_profile,  r.rig_name from (select * from t_well_computational_stats where last_computation_status = 'Failed') as twcs inner join t_well as w on twcs.id_t_well = w.id_t_well inner join (select distinct on (id_t_well) id_t_well, t_rig.rig_name, start_date from t_operation inner join t_rig on t_rig.id_t_rig = t_operation.id_t_rig order by id_t_well, start_date desc) as r on r.id_t_well = w.id_t_well"
+    queryRefreshTime: 60
+    queryTimeout: 30
+    labels:
+      - name: computation_profile
+        columnName: computation_profile
+      - name: well_name
+        columnName: well_name
+      - name: rig_name
+        columnName: rig_name
+    metrics:
+      - name: computation_errors
+        type: GAUGE
+        help: "the number of computation errors"
+        column: computation_errors
+
+  - name: id3_missing_phase
+    dataSource: id3_dashboard
+    query: "select r.well_name, r.well_id, missing_phases_duration_sec, r.rig_name from ( select t.well_name, t.well_id, t.missing_phases_duration_sec, top.rig_name , ROW_NUMBER() OVER (PARTITION BY t.id_t_well ORDER BY top.start_date desc) as rig_no from ( select tw.id_t_well, tw.well_name, tw.well_id, count(tmv.*) * 30 as missing_phases_duration_sec from t_well tw left join ( select id_t_well, dattim_utc from t_mudlog_mavg where id_t_well in ( select id_t_well from t_well where to_load is true and is_live is true) and id_t_phase is null) tmv on tw.id_t_well = tmv.id_t_well where to_load is true and is_live is true group by tw.id_t_well ) t left join (select * from t_operation top1 join t_rig tr on top1.id_t_rig = tr.id_t_rig ) top on t.id_t_well = top.id_t_well ) r where r.rig_no = 1"
+    queryRefreshTime: 1800
+    queryTimeout: 30
+    labels:
+      - name: well_name
+        columnName: well_name
+      - name: well_id
+        columnName: well_id
+      - name: rig_name
+        columnName: rig_name
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: missing_phases_duration_sec
+        type: GAUGE
+        help: "The seconds of sensors data without a phase associated"
+        column: missing_phases_duration_sec
+
+  - name: id3_missing_ddr
+    dataSource: id3_dashboard
+    query: "select r.well_name, r.well_id, r.missing_ddrs_duration_sec, r.rig_name from ( select *, ROW_NUMBER() OVER (PARTITION BY t.id_t_well ORDER BY top.start_date desc) as rig_no from ( select tw.id_t_well, tw.well_name, tw.well_id, count(tmv.*) * 30 as missing_ddrs_duration_sec from t_well tw left join (select id_t_well, dattim_utc from t_mudlog_mavg where id_t_well in (select id_t_well from t_well where to_load is true and is_live is true) and id_t_ddr is null) tmv on tw.id_t_well = tmv.id_t_well where to_load is true and is_live is true group by tw.id_t_well ) t left join (select * from t_operation top1 join t_rig tr on top1.id_t_rig = tr.id_t_rig ) top on t.id_t_well = top.id_t_well ) r where r.rig_no = 1"
+    queryRefreshTime: 1800
+    queryTimeout: 30
+    labels:
+      - name: well_name
+        columnName: well_name
+      - name: well_id
+        columnName: well_id
+      - name: rig_name
+        columnName: rig_name
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: missing_ddrs_duration_sec
+        type: GAUGE
+        help: "The seconds of sensors data without a ddr associated"
+        column: missing_ddrs_duration_sec
+
+  - name: id3_stand_missing_length
+    dataSource: id3_dashboard
+    query: "select r.well_name, r.well_id, r.stand_missing_length, r.rig_name from ( select *, ROW_NUMBER() OVER (PARTITION BY t.id_t_well ORDER BY top.start_date desc) as rig_no from ( select tw.id_t_well, tw.well_name, tw.well_id, tmv.trippped_length as stand_missing_length from t_well tw left join (select id_t_well, sum(abs(ddbtm)) as trippped_length from t_mudlog_mavg where id_t_well in (select id_t_well from t_well where to_load is true and is_live is true) and ddbtm > -15000 * 0.00833 and ddbtm < 15000 * 0.00833 and id_t_stand is null group by id_t_well) tmv on tw.id_t_well = tmv.id_t_well where to_load is true and is_live is true ) t left join (select * from t_operation top1 join t_rig tr on top1.id_t_rig = tr.id_t_rig ) top on t.id_t_well = top.id_t_well ) r where r.rig_no = 1"
+    queryRefreshTime: 1800
+    queryTimeout: 30
+    labels:
+      - name: well_name
+        columnName: well_name
+      - name: well_id
+        columnName: well_id
+      - name: rig_name
+        columnName: rig_name
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: stand_missing_length
+        type: GAUGE
+        help: "The length of sensors data without a stand associated"
+        column: stand_missing_length
+
+  - name: id3_missing_casing_records
+    dataSource: id3_dashboard
+    query: |
+      select distinct tw.well_name, tw.well_id, 1 as dummy, tw.group_security AS rig_name  from t_casing tc join (select id_t_well , DATE(max(ts_start_utc)) as latest_casing from t_ddr where source_code_level_3 in  ('12.1', '12.1.1', '12.1.2') and ts_start_utc  >= NOW() - interval '7 days' group by id_t_well) dt
+      on tc.id_t_well = dt.id_t_well
+      join t_well tw
+      on tw.id_t_well  = dt.id_t_well
+      where DATE(tc.ts_start_utc)  < dt.latest_casing
+    queryRefreshTime: 300
+    queryTimeout: 30
+    labels:
+      - name: well_name
+        columnName: well_name
+      - name: well_id
+        columnName: well_id
+      - name: rig_name
+        columnName: rig_name
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: dummy
+        type: GAUGE
+        help: "The dummy value to ensure the query returns a result set"
+        column: dummy
+
+  # Pipeline query: stage 1 fetches live wells, stage 2 runs per-well gap
+  # calculation using {{id_t_well}} substitution.
+  - name: id3_total_gap_duration_seconds
+    dataSource: id3_dashboard
+    queryRefreshTime: 180
+    queryTimeout: 60
+    pipeline:
+      - stageId: t_well
+        stageType: extract
+        dataSource: id3_dashboard
+        query: |
+          select t.id_t_well, t.well_name, t.well_id, t.rig_name from (
+            select tw.id_t_well, tw.well_name, tw.well_id, top.rig_name,
+                   ROW_NUMBER() OVER (PARTITION BY tw.id_t_well ORDER BY top.start_date desc) as rig_no
+            from t_well tw
+            left join (
+              select * from t_operation top1 join t_rig tr on top1.id_t_rig = tr.id_t_rig
+            ) top on tw.id_t_well = top.id_t_well
+            where to_load and is_live
+          ) t
+          where t.rig_no = 1
+
+      - stageId: sum_spikes
+        stageType: foreach
+        dataSource: id3_dashboard
+        inputStageIds:
+          - t_well
+        query: |
+          WITH well_data AS (
+            SELECT id_t_well, dattim_utc,
+                   LEAD(dattim_utc) OVER (ORDER BY dattim_utc) AS next_dattim_utc
+            FROM t_mudlog
+            WHERE id_t_well = {{id_t_well}}
+          ),
+          gaps AS (
+            SELECT id_t_well, EXTRACT(EPOCH FROM (next_dattim_utc - dattim_utc)) AS gap_seconds
+            FROM well_data
+            WHERE next_dattim_utc IS NOT NULL
+          ),
+          filtered_gaps AS (
+            SELECT id_t_well, gap_seconds - 5 AS adjusted_gap
+            FROM gaps
+            WHERE gap_seconds > 5
+          )
+          SELECT sum(adjusted_gap) AS total_gap_duration_seconds
+          FROM filtered_gaps
+          GROUP BY id_t_well
+
+    labels:
+      - name: well_name
+        columnName: well_name
+      - name: well_id
+        columnName: well_id
+      - name: rig_name
+        columnName: rig_name
+      - name: database_name
+        staticValue: id3_dashboard
+    metrics:
+      - name: total_gap_duration_seconds
+        type: GAUGE
+        help: "The total sensors gap duration in seconds"
+        column: total_gap_duration_seconds

@@ -1,0 +1,82 @@
+replicaCount: 1
+
+image:
+  repository: prometheus-database-exporter
+  tag: latest
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 2112
+
+# Environment variables — these override any values set in config.yaml
+env:
+  port: 2112
+  enableCollector: "true"
+  enableApi: "true"
+
+# Prometheus pod annotations for auto-discovery scraping
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "2112"
+  prometheus.io/path: "/metrics"
+
+resources: {}
+  # limits:
+  #   cpu: 200m
+  #   memory: 256Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+# The full contents of config.yaml, rendered into a ConfigMap and mounted at
+# /app/config/config.yaml inside the container. Edit this to configure your
+# datasources and queries. All fields match the config.yaml schema exactly.
+config: |
+  enableApi: true
+  enableCollector: true
+
+  schedulerConfig:
+    storage: "memory"
+    metadata:
+      connectionDetails: {}
+
+  storeConfig:
+    type: "local"
+    metadata:
+      connectionDetails: {}
+
+  collectorConfig:
+    type: prometheus
+    metadata: {}
+
+  serverConfig:
+    port: 2112
+    numWorkers: 5
+
+  dataSourceConfig:
+    - name: my-database
+      type: SQL
+      metadata:
+        connectionDetails:
+          host: "postgres-host"
+          port: "5432"
+          username: "postgres"
+          password: "changeme"
+          connectionString: "postgresql://postgres:changeme@postgres-host:5432/mydb?sslmode=disable"
+
+  queries:
+    - name: example_query
+      dataSource: my-database
+      query: "SELECT 1 AS value"
+      queryRefreshTime: 60
+      queryTimeout: 30
+      labels: []
+      metrics:
+        - name: value
+          type: GAUGE
+          help: "Example metric"
+          column: value

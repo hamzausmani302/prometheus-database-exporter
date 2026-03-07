@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "database-prometheus-exporter.fullname" . }}
+  labels:
+    {{- include "database-prometheus-exporter.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "database-prometheus-exporter.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        # Trigger a rollout whenever the config changes
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "database-prometheus-exporter.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.env.port }}
+              protocol: TCP
+          env:
+            - name: CONFIG_FILE_PATH
+              value: /app/config/config.yaml
+            - name: PORT
+              value: {{ .Values.env.port | quote }}
+            - name: ENABLE_COLLECTOR
+              value: {{ .Values.env.enableCollector | quote }}
+            - name: ENABLE_API
+              value: {{ .Values.env.enableApi | quote }}
+          volumeMounts:
+            - name: config
+              mountPath: /app/config/config.yaml
+              subPath: config.yaml
+              readOnly: true
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "database-prometheus-exporter.fullname" . }}-config
