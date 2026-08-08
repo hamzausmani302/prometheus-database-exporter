@@ -30,9 +30,10 @@ const (
 	// Enum mapping for CollectorType
 	Prometheus CollectorType = "Prometheus"
 	// enum mapping for SchedulerType
-	Memory SchedulerType = "memory"
-	Sqlite SchedulerType = "sqlite"
-	Redis  SchedulerType = "redis"
+	Memory   SchedulerType = "memory"
+	Sqlite   SchedulerType = "sqlite"
+	Redis    SchedulerType = "redis"
+	Postgres SchedulerType = "postgres"
 )
 
 const (
@@ -133,10 +134,10 @@ func GetConfig(env string, logger *logrus.Logger) ApplicationConfig {
 	var applicationConfig ApplicationConfig
 	if appCfg == nil {
 		logger.SetLevel(logrus.DebugLevel)
-		
+
 		// if path is not provided ,will read from the default path
 		configFilePath := os.Getenv("CONFIG_FILE_PATH")
-		if configFilePath == ""{
+		if configFilePath == "" {
 			configFilePath = DEFAULT_CONFIG_PATH
 		}
 
@@ -151,14 +152,14 @@ func GetConfig(env string, logger *logrus.Logger) ApplicationConfig {
 		applicationConfig.ReadConfigData(content)
 		ReadEnvVars(&applicationConfig)
 		appCfg = &applicationConfig
-	
+
 	}
 	return *appCfg
 }
 
-func ReadEnvVars(applicationConfig *ApplicationConfig){
+func ReadEnvVars(applicationConfig *ApplicationConfig) {
 	// envrironment variables have higher prioirty than normal variables
-	if err := envv11.Parse(applicationConfig); err != nil{
+	if err := envv11.Parse(applicationConfig); err != nil {
 		panic("Error reading Env variables")
 	}
 }

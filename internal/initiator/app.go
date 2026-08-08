@@ -32,9 +32,10 @@ type Application struct {
 	Done          chan bool
 }
 
-func(app *Application) GetConfig() config.ApplicationConfig{
+func (app *Application) GetConfig() config.ApplicationConfig {
 	return *app.cfg
-} 
+}
+
 // Setup and initialize the application components by resolving dependencies
 func (app *Application) Init() error {
 	app.logger = logrus.New()
@@ -57,6 +58,7 @@ func (app *Application) Init() error {
 
 	// Initializing schduler
 	storage, storageErr := factories.NewSchdulerStorageFactory(app.logger, &cfg).Create(cfg.Scheduler)
+	app.logger.Debug(storage)
 	app.storage = storage
 	if storageErr != nil {
 		app.logger.Panic(storageErr)
@@ -82,7 +84,6 @@ func (app *Application) StartCollector() {
 	}
 }
 
-
 // registerCollectors registers the metric collectors with Prometheus or additional backends
 func (app *Application) registerCollectors() {
 	collectorConfig := app.cfg.Collector
@@ -106,21 +107,22 @@ func (app *Application) StartApi() {
 	http.Handle("/app-metrics", promhttp.Handler())
 	http.Handle("/metrics", promhttp.HandlerFor(app.registry, promhttp.HandlerOpts{}))
 	// probing routes for health checks of exporter API
-	
-	if err := http.ListenAndServe(":2112", nil)	; err != nil {
+
+	if err := http.ListenAndServe(":2112", nil); err != nil {
 		panic(err)
 	}
 
 }
+
 // Function to check if collector is enabled
 func (app *Application) IsCollectorEnabled() bool {
 	return app.GetConfig().EnableCollector
 }
+
 // Function to check if API is enabled
 func (app *Application) IsApiEnabled() bool {
 	return app.GetConfig().EnableApi
 }
-
 
 // CleanUp performs cleanup operations before shutting down the application
 func (app *Application) CleanUp() error {

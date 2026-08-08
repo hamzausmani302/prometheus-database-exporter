@@ -26,7 +26,7 @@ func main() {
 	if app.IsApiEnabled() {
 		go app.StartApi()
 	}
-	
+
 	go func() {
 		// Listens for intended termination and terminate the memory addresses
 		rootLogger.Info("triggered executing")

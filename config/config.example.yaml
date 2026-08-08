@@ -1,16 +1,16 @@
 enableApi: true
-enableCollector: false
+enableCollector: true
 schedulerConfig:
-  storage: "memory" # enum [redis, sqlite, postgres, memory]
+  storage: "redis" # enum [redis, sqlite, postgres, memory]
   metadata:
-    connectionDetails: {}
-storeConfig:
-  type: "redis" # enum [Local, Redis] can add more implementations later by implemnting the DataStore interface
-  metadata:
-    connectionDetails:
+    connectionDetails: 
       host: localhost
       port: 6379
-      password: TiyNzDdjvY
+storeConfig:
+  type: "local" # enum [Local, Redis] can add more implementations later by implemnting the DataStore interface
+  metadata:
+    connectionDetails: {} 
+      
 collectorConfig:
   type: prometheus # enum [Prometheus] can add more implementations later by implemnting the ICollector interface
   metadata: {}
@@ -25,22 +25,20 @@ dataSourceConfig:
         host: localhost
         port: 5432
         username: postgres
-        password: password
-        connectionString: "postgresql://postgres:password@localhost:5432/id3_dashboard?sslmode=disable"
+        password: postgres
+        connectionString: "postgresql://postgres:postgres@localhost:5432/lego?sslmode=disable"
 
 queries:
-  - name: taxi_rides
+  - name: lego_parts_category_count
     dataSource: postgres-datastore
-    query: "select 'test1' AS well_id, 10 AS total_wells from t_well where to_load = false"
+    query: "select lpc.\"name\" as category, count(lpc.\"name\" ) as value from lego_parts lp join lego_part_categories lpc on lp.part_cat_id = lpc.id group by lpc.\"name\" "
     queryRefreshTime: 30
     queryTimeout: 5
     labels:
-      - name: database
-        staticValue: id3_dashboard1
-      - name: well_id
-        columnName: well_id
+      - name: category
+        columnName: category
     metrics:
       - name: total_wells # metric will be taxi_rides_total_active_rides in prometheus
         type: GAUGE
-        help: "Total number of active rides"
-        column: total_wells
+        help: "Total number of each category of lego parts"
+        column: value
