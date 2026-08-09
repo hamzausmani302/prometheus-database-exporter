@@ -1,5 +1,5 @@
 version: 2
 secret:
   ignored_paths:
-    - 'config\config_test.go'
-    - 'config\config.example.yaml'
+    - 'config/config_test.go'
+    - 'config/config.example.yaml'
