@@ -20,12 +20,9 @@ func main() {
 		rootLogger.Panic("Failed to initialize application", err)
 		return
 	}
-	if app.IsCollectorEnabled() {
-		go app.StartCollector()
-	}
-	if app.IsApiEnabled() {
-		go app.StartApi()
-	}
+	go app.StartCollector()
+	go app.StartApi()
+
 	go func() {
 		// Listens for intended termination and terminate the memory addresses
 		rootLogger.Info("triggered executing")

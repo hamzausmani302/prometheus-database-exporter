@@ -1,122 +1,117 @@
 # Database Prometheus Exporter
 
-A flexible and extensible exporter for scraping Prometheus metrics directly from SQL databases. Designed to minimize database overhead, handle complex metric scenarios, and support aggregation pipelines across multiple data sources.
+A flexible and extensible exporter for scraping Prometheus metrics directly from SQL databases. This project is designed to minimize database overhead, handle complex metric scenarios, and support aggregation pipelines across multiple data sources.
 
 ## Features
 
-- **Query-Level Refresh Intervals:** Each metric query refreshes at its own interval (e.g., complex queries every 3 hours, simple ones more frequently), reducing unnecessary database load.
-- **Null and Static Metric Handling:** Gracefully handles `NULL` values and static metrics, ensuring accurate Prometheus output.
-- **Multi-Database Support:** Configure each query to target a different database, enabling metrics collection from heterogeneous environments.
-- **Aggregation Pipelines:** Define DAG-based pipelines to aggregate data from multiple sources and output a single metric.
+- **Query-Level Refresh Intervals:**  
+  Each metric query can be refreshed at its own interval (e.g., complex queries every 3 hours, simple queries more frequently), reducing unnecessary load on your database.
+
+- **Null and Static Metric Handling:**  
+  Gracefully handles `NULL` values and static metrics returned from the database, ensuring accurate Prometheus metric output.
+
+- **Multi-Database Support:**  
+  Configure each query to target a different database, enabling metrics collection from heterogeneous environments.
+
+- **Aggregation Pipelines:**  
+  Define pipelines to aggregate data from multiple sources and output a single metric, simplifying complex metric calculations.
 
 ## Getting Started
 
 ### Prerequisites
 
-- [Go 1.24+](https://go.dev/dl/)
-- [Docker](https://docs.docker.com/get-docker/) (for running dependencies locally)
-- A supported SQL database (currently PostgreSQL)
+- Node.js (or your project's runtime)
+- Supported SQL databases (e.g., PostgreSQL, MySQL, MSSQL)
 
 ### Installation
 
 ```bash
 git clone https://github.com/yourusername/database-prometheus-exporter.git
 cd database-prometheus-exporter
-git submodule update --init --recursive
+npm install
 ```
 
 ### Configuration
 
-Copy the example config and fill in your database details:
-
-```bash
-cp config/config.example.yaml config/config.yaml
-```
-
-Edit `config/config.yaml`. The key sections are:
+Define your metrics and queries in a configuration file (e.g., `config.yaml`):
 
 ```yaml
-dataSourceConfig:
-  - name: my-postgres
-    type: SQL
-    metadata:
-      connectionDetails:
-        host: localhost
-        port: 5432
-        username: postgres
-        password: your-password
-        connectionString: "postgresql://postgres:your-password@localhost:5432/mydb?sslmode=disable"
+metrics:
+  - name: user_count
+    query: SELECT COUNT(*) FROM users
+    refresh_interval: 60 # seconds
+    database: postgres_main
 
-queries:
-  - name: active_users
-    dataSource: my-postgres
-    query: "SELECT status, COUNT(*) AS user_count FROM users GROUP BY status"
-    queryRefreshTime: 60   # seconds between refreshes
-    queryTimeout: 10
-    labels:
-      - name: status
-        columnName: status
-    metrics:
-      - name: user_count
-        type: GAUGE
-        help: "Number of users per status"
-        column: user_count
+  - name: sales_total
+    query: SELECT SUM(amount) FROM sales
+    refresh_interval: 10800 # 3 hours
+    database: mysql_sales
+
+pipelines:
+  - name: total_activity
+    sources:
+      - user_count
+      - sales_total
+    aggregation: sum
 ```
 
-### Building
+### Running the Exporter
 
 ```bash
-go build -o bin/exporter ./cmd/exporter/
+npm start
 ```
 
-### Running
+Metrics will be exposed at `/metrics` endpoint for Prometheus to scrape.
 
-```bash
-CONFIG_FILE_PATH=config/config.yaml ./bin/exporter
-```
+## Handling Null and Static Values
 
-Metrics are exposed at `http://localhost:2112/metrics` for Prometheus to scrape.
+- Null values are converted to `0` or omitted based on configuration.
+- Static metrics (unchanging values) are cached and refreshed only at the specified interval.
 
-## Configuration Reference
+## Aggregation Pipelines
 
-| Field | Description |
-|---|---|
-| `enableCollector` | Start the query scheduler that fetches metrics from the database |
-| `enableApi` | Start the HTTP server exposing `/metrics` |
-| `schedulerConfig.storage` | Task scheduler backend: `memory`, `redis`, `sqlite` |
-| `storeConfig.type` | Metrics cache: `local` or `redis` |
-| `collectorConfig.type` | Collector implementation: `prometheus` |
-| `dataSourceConfig` | List of database connections |
-| `queries` | List of SQL queries with label/metric mappings |
-
-## Running Tests
-
-```bash
-# Unit tests
-go test ./...
-
-# Integration tests (requires Postgres + Redis)
-docker compose -f test/e2e/docker/docker-compose.yml up -d
-go test -tags=integration ./test/integration/
-
-# E2E tests
-go test -tags=e2e ./test/e2e/
-```
-
-## Linting
-
-```bash
-golangci-lint run
-```
+Pipelines allow you to combine metrics from different sources using simple aggregation functions (e.g., sum, average).
 
 ## Contributing
 
-We welcome contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, coding standards, and the PR process.
+We welcome contributions! Please open issues or submit pull requests for new features, bug fixes, or documentation improvements.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/my-feature`)
+3. Commit your changes
+4. Push to the branch (`git push origin feature/my-feature`)
+5. Open a pull request
 
 ## License
 
 This project is open source under the [MIT License](LICENSE).
 
+## TODO
+
+1. Simplify collector and API startups (Push startups in application strict itself in cmd) ✅
+2. In case of non distibuted store, allow support for standalone exporter with both (collector/api)✅
+3. Add cmd for standalone setup ✅
+4. Create test cases for exporeter to test all functionality ✅
+5. Create CI pipelines to build to following ✅
+   1. Push Image to docker on tag ✅
+   2. Push Binary to s3 bucket ✅
+6. Create integration test/ e2e tests
+7. Create documentation for the exporter
+8. Add husky pre-commit checks to ensure best practices
+9. Add examples
+10. Add CLI tool support with few features
+11. Current queries in redis
+12. Print result from redis
+13. Print result of exporter for the query or all
+14. Add debugger utility to check the status of the current running queries in a form of a graph or history.
+# Lint
+
+bash`golangci-lint run`
+
 ## Contact
 
 For questions or support, open an issue or reach out via GitHub Discussions.
+
+# Setup Redis Server
+
+docker run -d --name my-redis -p 6379:6379 redis:alpine

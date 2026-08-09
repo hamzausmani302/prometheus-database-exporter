@@ -64,9 +64,8 @@ queries:
 
 }
 
-
-func TestEnvInjection(t *testing.T){
-  manifest :=
+func TestEnvInjection(t *testing.T) {
+	manifest :=
 		`storeConfig:
   type: local # enum [Local, Redis] can add more implementations later by implemnting the DataStore interface
   metadata:
@@ -115,16 +114,14 @@ queries:
 
 	var appConfig ApplicationConfig
 	appConfig.ReadConfigData([]byte(manifest))
-  os.Setenv("STORE_TYPE", "TestStore")
-  os.Setenv("PORT", "8000")
-  ReadEnvVars(&appConfig)
-  if appConfig.Port != 8000 {
-    t.Errorf("Expected %d , Got %d" , 8000 , appConfig.Port)
-  }
-  if appConfig.Store.StoreType != "TestStore" {
-    t.Errorf("Expected %s , Got %s" , "TestStore" , appConfig.Store.StoreType)
-  }
+	os.Setenv("STORE_TYPE", "TestStore")
+	os.Setenv("PORT", "8000")
+	ReadEnvVars(&appConfig)
+	if appConfig.Port != 8000 {
+		t.Errorf("Expected %d , Got %d", 8000, appConfig.Port)
+	}
+	if appConfig.Store.StoreType != "TestStore" {
+		t.Errorf("Expected %s , Got %s", "TestStore", appConfig.Store.StoreType)
+	}
 
 }
-
-

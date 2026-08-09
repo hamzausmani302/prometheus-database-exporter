@@ -30,9 +30,10 @@ const (
 	// Enum mapping for CollectorType
 	Prometheus CollectorType = "Prometheus"
 	// enum mapping for SchedulerType
-	Memory SchedulerType = "memory"
-	Sqlite SchedulerType = "sqlite"
-	Redis  SchedulerType = "redis"
+	Memory   SchedulerType = "memory"
+	Sqlite   SchedulerType = "sqlite"
+	Redis    SchedulerType = "redis"
+	Postgres SchedulerType = "postgres"
 )
 
 const (
@@ -134,10 +135,10 @@ func GetConfig(logger *logrus.Logger) ApplicationConfig {
 	var applicationConfig ApplicationConfig
 	if appCfg == nil {
 		logger.SetLevel(logrus.DebugLevel)
-		
+
 		// if path is not provided ,will read from the default path
 		configFilePath := os.Getenv("CONFIG_FILE_PATH")
-		if configFilePath == ""{
+		if configFilePath == "" {
 			configFilePath = DEFAULT_CONFIG_PATH
 		}
 

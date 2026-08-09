@@ -27,10 +27,10 @@ type Stage interface {
 }
 
 type BaseStage struct {
-	StageId       string    `yaml:"stageId"`
-	StageType     StageType `yaml:"stageType"`
-	InputStageIds []string  `yaml:"inputStageIds"`
-	inputStages   []Stage
+	StageId         string    `yaml:"stageId"`
+	StageType       StageType `yaml:"stageType"`
+	InputStageIds   []string  `yaml:"inputStageIds"`
+	inputStages     []Stage
 	outputDataframe dataframe.DataFrame
 }
 
@@ -62,8 +62,8 @@ func (e *ExtractStage) Evaluate() (dataframe.DataFrame, error) {
 	df := e.dataSource.GetData(datasource.SQLQuery{Query: e.Query})
 	return df, nil
 }
-func (e *ExtractStage) GetBaseStage() *BaseStage  { return &e.BaseStage }
-func (e *ExtractStage) SetInputStages(s []Stage)  { e.inputStages = s }
+func (e *ExtractStage) GetBaseStage() *BaseStage { return &e.BaseStage }
+func (e *ExtractStage) SetInputStages(s []Stage) { e.inputStages = s }
 
 // --- ForEachStage ---
 //

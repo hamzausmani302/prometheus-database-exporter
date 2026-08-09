@@ -4,12 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 
 	"github.com/go-gota/gota/dataframe"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 )
-
 
 type PostgresReader struct {
 	ctx              context.Context
@@ -88,8 +88,9 @@ func (reader *PostgresReader) Connect() (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = conn.Ping(); err != nil {
-		return nil, fmt.Errorf("failed to connect to the database: %w", err)
+	err = conn.Ping()
+	if err != nil {
+		log.Fatalf("Failed to connect to the database: %v", err)
 	}
 
 	reader.conn = conn

@@ -64,6 +64,15 @@ func (dsf *SchedulerStorageFactory) Create(schedulerConfig config.SchedulerConfi
 			return nil, err
 		}
 		return strg, nil
+	} else if strings.EqualFold(strings.ToLower(string(schedulerConfig.Storage)), strings.ToLower(string(config.Postgres))) {
+		if schedulerConfig.Metadata.ConnectionDetails["connectionString"] == "" {
+			dsf.logger.Error("connectionString not provided")
+			return nil, errors.New("connectionString not provided")
+		}
+		strg, _ := storage.NewPostgresStorage(storage.PostgresDBConfig{
+			DbURL: schedulerConfig.Metadata.ConnectionDetails["connectionString"],
+		})
+		return strg, nil
 	}
 	return nil, fmt.Errorf("invalid storage type: %s", schedulerConfig.Storage)
 }

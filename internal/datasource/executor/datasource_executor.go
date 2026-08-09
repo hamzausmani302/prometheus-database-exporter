@@ -1,6 +1,8 @@
 package datasource_executor
 
 import (
+	"fmt"
+
 	"github.com/go-gota/gota/dataframe"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/datasource"
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/schema"
@@ -23,7 +25,10 @@ func (d *DataSourceExecutor) Execute(query schema.Query) (dataframe.DataFrame, e
 		return pipeline.RunPipeline()
 	}
 
-	ds := d.dataSourceMap[query.DataSource]
+	ds, ok := d.dataSourceMap[query.DataSource]
+	if !ok {
+		return dataframe.DataFrame{}, fmt.Errorf("data source %q not found", query.DataSource)
+	}
 	if err := ds.Connect(); err != nil {
 		return dataframe.DataFrame{}, err
 	}

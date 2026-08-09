@@ -1,0 +1,4 @@
+scheduler store -   memory  sqlite  redis   postgres 
+result store -  
+memory 
+redis

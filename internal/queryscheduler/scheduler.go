@@ -14,16 +14,19 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-/* Interface to be implemneted for the task scheduler, will be helpful for mocking query scheduler
-Underneath we are using the scheduler libraray but can be implemneted for custom implementation
+/*
+	Interface to be implemneted for the task scheduler, will be helpful for mocking query scheduler
+
+# Underneath we are using the scheduler libraray but can be implemneted for custom implementation
 
 Only scheduler can also be mocked by assigning a different implementation with the same interface the go-scheduler package follows
-interface {
-	Start() error
-	Stop()
-	RunEvery(duration time.Duration, func task.Function, ...taks.Params) task.ID, error
-	Note: Although I dont think that is a good idea
-}
+
+	interface {
+		Start() error
+		Stop()
+		RunEvery(duration time.Duration, func task.Function, ...taks.Params) task.ID, error
+		Note: Although I dont think that is a good idea
+	}
 */
 type IQueryScheduler interface {
 	// Initialization of objects & scheduler
@@ -58,8 +61,8 @@ func (q *QueryScheduler) Init() error {
 			q.logger.Debugf("Error while running task with id = %s | query = %s | %d", query.GetHash(), query.Query, query.QueryRefreshTime)
 			return err
 		}
-		q.logger.Info("ID " , query.GetHash())
-		
+		q.logger.Info("ID ", query.GetHash())
+
 	}
 	return nil
 }
@@ -77,11 +80,30 @@ func (q *QueryScheduler) Stop() error {
 	return nil
 }
 
+// resolveQuery returns the canonical, fully-initialized Query for the given
+// query's Name. Tasks reloaded from persistent scheduler storage are
+// reconstructed via JSON, which cannot populate the unexported dataSource/hash
+// fields, so callers must resolve back to the live instance in q.Queries
+// before using either of those.
+func (q *QueryScheduler) resolveQuery(query *schema.Query) *schema.Query {
+	for _, canonical := range q.Queries {
+		if canonical.Name == query.Name {
+			return canonical
+		}
+	}
+	return query
+}
+
 // The actual task workflow will be written here
 func (q *QueryScheduler) ExecuteTask(query *schema.Query) error {
+	query = q.resolveQuery(query)
 	now := time.DateTime
-	q.logger.Infof("Executing task for %s %s %s %s | %d",query.GetHash(), query.Name, query.Query, now, query.QueryRefreshTime)
-	df, _ := q.datasourceExecutor.Execute(*query)
+	q.logger.Infof("Executing task for %s -  %s %s %s | %d", query.GetHash(), query.Name, query.Query, now, query.QueryRefreshTime)
+	df, err := q.datasourceExecutor.Execute(*query)
+	if err != nil {
+		q.logger.Errorf("error executing query %s: %v", query.Name, err)
+		return err
+	}
 	q.logger.Debug(df)
 
 	// put the data with the key in cacheStore
