@@ -3,6 +3,7 @@ package factories
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/algorythma/go-scheduler/storage"
@@ -20,7 +21,7 @@ type SchedulerStorageFactory struct {
 }
 
 func (dsf *SchedulerStorageFactory) Create(schedulerConfig config.SchedulerConfig) (storage.TaskStore, error) {
-	if strings.EqualFold(strings.ToLower(string(schedulerConfig.Storage)) , strings.ToLower(string(config.Memory)) ){
+	if strings.EqualFold(strings.ToLower(string(schedulerConfig.Storage)), strings.ToLower(string(config.Memory))) {
 		return storage.NewMemoryStorage(), nil
 	} else if strings.EqualFold(strings.ToLower(string(schedulerConfig.Storage)), strings.ToLower(string(config.Sqlite))) {
 		if schedulerConfig.Metadata.ConnectionDetails["dbName"] == "" {
@@ -39,18 +40,32 @@ func (dsf *SchedulerStorageFactory) Create(schedulerConfig config.SchedulerConfi
 		}
 		return strg, nil
 	} else if strings.EqualFold(strings.ToLower(string(schedulerConfig.Storage)), strings.ToLower(string(config.Redis))) {
-		if schedulerConfig.Metadata.ConnectionDetails["dbName"] == "" {
-			dsf.logger.Warn("dbName not provided")
-			return nil, errors.New("DbName not provided")
-		}
+
 		dsf.logger.Debug("sc", schedulerConfig)
-		strg, _ := storage.NewRedisStorage(storage.RedisConfig{
-			Host:     "test",
-			Port:     6379,
-			Password: "",
+		port, err := strconv.Atoi(schedulerConfig.Metadata.ConnectionDetails["port"])
+		if err != nil {
+			dsf.logger.Error("Invalid port number")
+			return nil, errors.New("Invalid port number")
+		}
+		strg, err := storage.NewRedisStorage(storage.RedisConfig{
+			Host:     schedulerConfig.Metadata.ConnectionDetails["host"],
+			Port:     port,
+			Password: schedulerConfig.Metadata.ConnectionDetails["password"],
 			Db:       0,
 		})
+		if err != nil {
+			return nil, err
+		}
 
+		return strg, nil
+	} else if strings.EqualFold(strings.ToLower(string(schedulerConfig.Storage)), strings.ToLower(string(config.Postgres))) {
+		if schedulerConfig.Metadata.ConnectionDetails["connectionString"] == "" {
+			dsf.logger.Error("connectionString not provided")
+			return nil, errors.New("connectionString not provided")
+		}
+		strg, _ := storage.NewPostgresStorage(storage.PostgresDBConfig{
+			DbURL: schedulerConfig.Metadata.ConnectionDetails["connectionString"],
+		})
 		return strg, nil
 	}
 	dsf.logger.Fatalf("Invalid Storage type: %s", schedulerConfig.Storage)

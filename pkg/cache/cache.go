@@ -40,11 +40,12 @@ func (ltc *LocalTimeCache) Get(key string) ([]byte, error) {
 }
 
 /*
-	Set the key and ttl value
-	Input:
-		key: key of the item
-		data: value for the item
-		expiresIn: duration in seconds for the item to expire
+Set the key and ttl value
+Input:
+
+	key: key of the item
+	data: value for the item
+	expiresIn: duration in seconds for the item to expire
 */
 func (ltc *LocalTimeCache) Set(key string, data []byte, expiresIn int64) error {
 	ltc.Cache.Set(key, data)

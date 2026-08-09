@@ -42,6 +42,19 @@ type Query struct {
 	Metrics          []Metric `yaml:"metrics"`
 }
 
+// String gives Query a deterministic, content-only representation.
+// task.Task.Hash() (in the scheduler library) hashes fmt.Sprintf("%+v", ...) on
+// scheduled task params to detect whether a task is already registered.
+// Without this override, that falls back to the default struct dump, which
+// includes the unexported dataSource pointer - a live address that differs
+// across process restarts, and is nil on tasks reloaded from storage (JSON
+// can't populate unexported fields). Two representations of the same query
+// would then hash differently and register as duplicate scheduled tasks.
+func (query *Query) String() string {
+	return fmt.Sprintf("Query{Name:%s DataSource:%s Query:%s QueryTimeout:%d QueryRefreshTime:%d Labels:%+v Metrics:%+v}",
+		query.Name, query.DataSource, query.Query, query.QueryTimeout, query.QueryRefreshTime, query.Labels, query.Metrics)
+}
+
 // Set the value of hash from outside
 func (query *Query) SetHash(hash string) {
 	query.hash = hash
@@ -52,19 +65,28 @@ func (query *Query) GetHash() string {
 	return query.hash
 }
 
-/*// Generate hash by the following way
- 		MD5(query Name + SQL Query + label names + metrics labels )
-// */
+/*
+// Generate hash by the following way
+
+	MD5(query Name + SQL Query + label names + metrics labels )
+
+//
+*/
 func (query *Query) GenerateHash() {
 
 	payload := ""
 	for _, label := range query.Labels {
 		payload += label.Name
+		payload += label.ColumnName
+		payload += label.StaticValue
 	}
 	for _, metric := range query.Metrics {
 		payload += metric.Name
+		payload += metric.Type
 	}
-	query.hash = utils.Hash(query.Name, query.Query, payload)
+	payload += query.Query
+	payload += query.Name
+	query.hash = utils.Hash(payload)
 }
 
 func (query *Query) GetDataSource() *datasource.IDataSource {

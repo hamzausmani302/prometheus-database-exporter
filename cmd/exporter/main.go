@@ -6,14 +6,9 @@ import (
 	"syscall"
 
 	"github.com/hamzausmani302/prometheus-database-exporter/internal/initiator"
-
 	"github.com/sirupsen/logrus"
 )
 
-/*
-entry point for collector which collects metrics from the database
-and puts them in store from where prmetheus can scrape them via API.
-*/
 func main() {
 	rootLogger := logrus.New()
 	sigs := make(chan os.Signal, 1)
@@ -25,7 +20,12 @@ func main() {
 		rootLogger.Panic("Failed to initialize application", err)
 		return
 	}
-	go app.StartCollector()
+	if app.IsCollectorEnabled() {
+		go app.StartCollector()
+	}
+	if app.IsApiEnabled() {
+		go app.StartApi()
+	}
 
 	go func() {
 		// Listens for intended termination and terminate the memory addresses

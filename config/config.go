@@ -1,13 +1,12 @@
 package config
 
 import (
-	"fmt"
 	"log"
 	"os"
-	"path"
 
 	"github.com/sirupsen/logrus"
 
+	envv11 "github.com/caarlos0/env/v11"
 	"gopkg.in/yaml.v3"
 )
 
@@ -31,9 +30,15 @@ const (
 	// Enum mapping for CollectorType
 	Prometheus CollectorType = "Prometheus"
 	// enum mapping for SchedulerType
-	Memory SchedulerType = "memory"
-	Sqlite SchedulerType = "sqlite"
-	Redis  SchedulerType = "redis"
+	Memory   SchedulerType = "memory"
+	Sqlite   SchedulerType = "sqlite"
+	Redis    SchedulerType = "redis"
+	Postgres SchedulerType = "postgres"
+)
+
+const (
+	// Default Path
+	DEFAULT_CONFIG_PATH = "config/config.yaml"
 )
 
 /*
@@ -52,7 +57,7 @@ Configuration structs for the Store.
 */
 type StoreConfig struct {
 	// Type of the store enum (InMemory, Redis)
-	StoreType string `yaml:"type"`
+	StoreType string `yaml:"type" env:"STORE_TYPE"`
 	// Metadata for the store (Specifying connection details)
 	Metadata StoreConfigMetadataConfig `yaml:"metadata"`
 }
@@ -106,9 +111,17 @@ type ApplicationConfig struct {
 	DataSource []DataSourceConfig `yaml:"dataSourceConfig"`
 	// Queries to be executed to fetch metrics
 	Queries []map[string]interface{} `yaml:"queries"`
+	// Enable collector
+	EnableCollector bool `yaml:"enableCollector" env:"ENABLE_COLLECTOR" envDefault:"true"`
+	// Enable API
+	EnableApi bool `yaml:"enableApi" env:"ENABLE_API" envDefault:"true"`
+	// Port on which app will run
+	Port int `env:"PORT" envDefault:"8080"`
+	// the Path to the config file
+	ConfigFilePath string `env:"CONFIG_FILE_PATH" envDefault:"config/config.yaml"`
 }
 
-func (cfg *ApplicationConfig) readConfigData(data []byte) {
+func (cfg *ApplicationConfig) ReadConfigData(data []byte) {
 	err := yaml.Unmarshal(data, &cfg)
 	if err != nil {
 		log.Fatalf("Error unmarshaling YAML: %v", err)
@@ -121,7 +134,13 @@ func GetConfig(env string, logger *logrus.Logger) ApplicationConfig {
 	var applicationConfig ApplicationConfig
 	if appCfg == nil {
 		logger.SetLevel(logrus.DebugLevel)
-		configFilePath := path.Join("config", fmt.Sprintf("config.%s.yaml", env))
+
+		// if path is not provided ,will read from the default path
+		configFilePath := os.Getenv("CONFIG_FILE_PATH")
+		if configFilePath == "" {
+			configFilePath = DEFAULT_CONFIG_PATH
+		}
+
 		logger.Infof("Reading config file: %s ", configFilePath)
 		// Read the config file
 
@@ -130,9 +149,17 @@ func GetConfig(env string, logger *logrus.Logger) ApplicationConfig {
 			logger.Fatalf("Error reading file: %v", err)
 			panic("There is a problem reading the file...")
 		}
-		applicationConfig.readConfigData(content)
-		// fmt.Println(applicationConfig)
+		applicationConfig.ReadConfigData(content)
+		ReadEnvVars(&applicationConfig)
 		appCfg = &applicationConfig
+
 	}
 	return *appCfg
+}
+
+func ReadEnvVars(applicationConfig *ApplicationConfig) {
+	// envrironment variables have higher prioirty than normal variables
+	if err := envv11.Parse(applicationConfig); err != nil {
+		panic("Error reading Env variables")
+	}
 }
