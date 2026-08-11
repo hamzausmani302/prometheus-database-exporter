@@ -2,7 +2,7 @@ name: Unit Testing
 on:
     workflow_dispatch:
       inputs:
-        ref:
+        branch_name:
           required: false
           type: string
     workflow_call:
