@@ -120,7 +120,9 @@ queries:
 	if os.Setenv("PORT", "8000") != nil {
 		t.Errorf("Error setting environment variable PORT")
 	}
-	ReadEnvVars(&appConfig)
+	if ReadEnvVars(&appConfig) != nil {
+		t.Errorf("Error reading environment variables")
+	}
 	if appConfig.Port != 8000 {
 		t.Errorf("Expected %d , Got %d", 8000, appConfig.Port)
 	}
