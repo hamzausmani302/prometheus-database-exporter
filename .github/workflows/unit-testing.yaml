@@ -1,11 +1,15 @@
 name: Unit Testing
 on:
     workflow_dispatch:
+      inputs:
+        ref:
+          required: false
+          type: string
     workflow_call:
-        inputs:
-            ref:
-                required: true
-                type: string
+      inputs:
+        ref:
+          required: true
+          type: string
 
 jobs:
     unit-testing:
