@@ -10,7 +10,7 @@ import (
 // create query object
 // validate the query by loading it
 func TestQuery(t *testing.T) {
-	var queryYAML map[string]interface{} = map[string]interface{}{
+	var queryYAML = map[string]interface{}{
 		
 			"name":            "taxi_rides",
 			"dataSource":      "postgres-datastore",
@@ -31,7 +31,7 @@ func TestQuery(t *testing.T) {
 	sources := map[string]datasource.IDataSource{
 		"postgres-datastore": &datasource.PostgresDataSource{},
 	}
-	var q *Query = &Query{}
+	var q = &Query{}
 	err := q.Load(&logrus.Logger{}, queryYAML, sources);
 	if err != nil {
 		t.Errorf("Error while loading query : %s", err.Error())

@@ -21,9 +21,10 @@ type CacheStoreFactory struct {
 func (dsf *CacheStoreFactory) Create(storeConfig config.StoreConfig) (cache.ICache, error) {
 	dsf.logger.Debugf("Creating %s store", storeConfig.StoreType)
 
-	if storeConfig.StoreType == "local" {
+	switch storeConfig.StoreType {
+	case "local":
 		return cache.NewLocaltimeCache(), nil
-	} else if storeConfig.StoreType == "redis" {
+	case "redis":
 		port, err := strconv.Atoi(storeConfig.Metadata.ConnectionDetails["port"])
 		if err != nil {
 			dsf.logger.Warn("Store Config Port not specified, defaulting to 6379")

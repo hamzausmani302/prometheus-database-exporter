@@ -114,8 +114,12 @@ queries:
 
 	var appConfig ApplicationConfig
 	appConfig.ReadConfigData([]byte(manifest))
-	os.Setenv("STORE_TYPE", "TestStore")
-	os.Setenv("PORT", "8000")
+	if os.Setenv("STORE_TYPE", "TestStore") != nil {
+		t.Errorf("Error setting environment variable STORE_TYPE")
+	}
+	if os.Setenv("PORT", "8000") != nil {
+		t.Errorf("Error setting environment variable PORT")
+	}
 	ReadEnvVars(&appConfig)
 	if appConfig.Port != 8000 {
 		t.Errorf("Expected %d , Got %d", 8000, appConfig.Port)

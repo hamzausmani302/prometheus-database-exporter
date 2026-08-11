@@ -36,7 +36,7 @@ func (_collector *QueryCollector) getDataFromStore(key string) (dataframe.DataFr
 }
 
 func (_collector *QueryCollector) assignLabels(cols []string, record []string, query *schema.Query) []CollectorMetricLabel {
-	var commonLabels []CollectorMetricLabel = []CollectorMetricLabel{}
+	var commonLabels = []CollectorMetricLabel{}
 	for _, label := range query.Labels {
 		// if static value is not provided, assign the column Value
 		// if both are empty, log an error

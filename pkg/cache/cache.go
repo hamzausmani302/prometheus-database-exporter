@@ -36,7 +36,7 @@ func (ltc *LocalTimeCache) Get(key string) ([]byte, error) {
 		}
 	}
 
-	return nil, errors.New("Not Found")
+	return nil, errors.New("not found")
 }
 
 /*

@@ -15,7 +15,9 @@ func SimpleGetRequest(url string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close() // Always close response body
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	// Read the response body
 	body, err := io.ReadAll(resp.Body)
@@ -27,20 +29,20 @@ func SimpleGetRequest(url string) (string, error) {
 
 // APIClient is a reusable HTTP client for making API requests.
 type APIClient struct {
-	BaseURL    string
-	HTTPClient *http.Client
-	Headers    map[string]string
+	BaseURL           string
+	HTTPClient        *http.Client
+	Headers           map[string]string
 	ReturnRawResponse bool
 }
 
 // New creates a new APIClient with a base URL and default timeout.
-func NewHttpClient(baseURL string, timeout time.Duration, headers map[string]string, returnRawResponse bool)  *APIClient {
+func NewHttpClient(baseURL string, timeout time.Duration, headers map[string]string, returnRawResponse bool) *APIClient {
 	return &APIClient{
 		BaseURL: baseURL,
 		HTTPClient: &http.Client{
 			Timeout: timeout,
 		},
-		Headers: headers,
+		Headers:           headers,
 		ReturnRawResponse: returnRawResponse,
 	}
 }
@@ -79,7 +81,9 @@ func (c *APIClient) doRequest(ctx context.Context, method, endpoint string, body
 		return errors.New(string(b))
 	}
 	if c.ReturnRawResponse {
-		result = resp.Body
+		if ptr, ok := result.(*io.ReadCloser); ok {
+			*ptr = resp.Body
+		}
 		return nil
 	}
 	if result != nil {

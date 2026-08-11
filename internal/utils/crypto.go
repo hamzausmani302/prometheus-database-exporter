@@ -21,7 +21,7 @@ func HashDeprecated(params ...string) string {
 }
 
 func Hash(params ...string) string {
-	var payload string = ""
+	var payload = ""
 	for _, param := range params {
 		payload += param
 	} 

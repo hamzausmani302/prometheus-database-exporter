@@ -7,7 +7,7 @@ import (
 
 // check if the instance is created properly and interface methods are working
 func TestCacheInstance(t *testing.T) {	
-	var cache ICache = NewLocaltimeCache()
+	var cache = NewLocaltimeCache()
 	if cache.GetCacheType() != "localcache" {
 		t.Errorf("Expected cache type localcache, got %s", cache.GetCacheType())
 	}

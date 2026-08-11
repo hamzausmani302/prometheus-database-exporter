@@ -36,7 +36,9 @@ func (reader *PostgresReader) Read(query string) (dataframe.DataFrame, error) {
 		reader.Logger.Error(cerr)
 		return dataframe.DataFrame{}, cerr
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+	}()
 	var results []map[string]interface{}
 
 	for rows.Next() {

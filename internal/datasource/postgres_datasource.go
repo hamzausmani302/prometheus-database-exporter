@@ -60,7 +60,11 @@ func (p *PostgresDataSource) Connect() error {
 // Close closes the connection to the PostgreSQL database.
 func (p *PostgresDataSource) Close() error {
 	p.logger.Info("Closing connection to Postgres Database")
-	(*p.Reader).Close()
+	err := (*p.Reader).Close()
+	if err != nil {
+		p.logger.Error(err)
+		return err
+	}
 	return nil
 }
 
