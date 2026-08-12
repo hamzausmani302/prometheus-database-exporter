@@ -1,0 +1,35 @@
+name: Integration Testing
+on:
+  workflow_dispatch:
+
+  workflow_call:
+    inputs:
+      ref: 
+        type: string
+        required: true
+        description: the commit to run the pipeline on
+jobs:
+  example_matrix:
+    strategy:
+      matrix:
+        storage-store: [memory, redis, postgres]  #TODO: add sqlite once we have a sqlite implementation
+        cache-store: [local, redis]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.ref | github.ref_name}}
+
+    - name: Setup go
+      uses: actions/setup-go@v6.0.0
+      with:
+        # The Go version to download (if necessary) and use. Supports semver spec and ranges. Be sure to enclose this option in single quotation marks.
+        go-version: "1.24" # optional
+
+    - name: Test integration
+      run: |
+        git submodule update --init --recursive
+        echo "Running integration tests with storage-store=${{ matrix.storage-store }} and cache-store=${{ matrix.cache-store }}"
+
+
