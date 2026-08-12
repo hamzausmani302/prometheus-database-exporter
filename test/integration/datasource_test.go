@@ -39,25 +39,29 @@ dataSourceConfig:
     host: localhost
     port: 5432
     username: postgres
-    password: password
+    password: postgres
 `
 	//check connection
 	cfg.ReadConfigData([]byte(configData))
-	if len(cfg.DataSource) < 1{
+	if len(cfg.DataSource) < 1 {
 		t.Errorf("Expected number of data sources to be > 0 , but received %d", len(cfg.DataSource))
 	}
 	logger := logrus.New()
-	ds := factories.NewDatasourceFactory(logger, &cfg).Create(cfg.DataSource[0])
-	if err :=  ds.Connect(); err != nil {
+	ds, errDataSourceCreation := factories.NewDatasourceFactory(logger, &cfg).Create(cfg.DataSource[0])
+	if errDataSourceCreation != nil {
+		t.Error(errDataSourceCreation)
+		return
+	}
+	if err := ds.Connect(); err != nil {
 		t.Error(err)
 		return
 	}
 	result := ds.GetData(datasource.SQLQuery{Query: "select 1 AS col, 2 AS col2"})
-	if result.Nrow() <= 0{
+	if result.Nrow() <= 0 {
 		t.Errorf("No data received, expected data")
-	}	
+	}
 	record := result.Copy().Records()
-	if record[1][0] != "1" || record[1][1] != "2"{
+	if record[1][0] != "1" || record[1][1] != "2" {
 		t.Errorf("got = {%s %s} ,expected = {1, 2}", record[1][0], record[1][1])
 	}
 }
