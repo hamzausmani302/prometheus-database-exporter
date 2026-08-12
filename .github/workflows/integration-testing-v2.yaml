@@ -19,7 +19,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        ref: ${{ inputs.ref | github.ref_name}}
+        ref: ${{ inputs.ref || github.ref_name}}
 
     - name: Setup go
       uses: actions/setup-go@v6.0.0
