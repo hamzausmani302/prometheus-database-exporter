@@ -9,7 +9,7 @@ on:
         required: true
         description: the commit to run the pipeline on
 jobs:
-  example_matrix:
+  e2e-testing-matrix:
     strategy:
       matrix:
         storage-store: [memory, redis, postgres]  #TODO: add sqlite once we have a sqlite implementation

@@ -42,20 +42,20 @@ jobs:
     with:
       ref: ${{ github.ref_name }}
 
+  build-executable:
+    needs: [integration-testing, e2e-testing]
+    uses: ./.github/workflows/build-executable.yaml
+    with:
+      dry-run: ${{ inputs.dry-run || false }}
+      ref: ${{ github.ref_name }}
+
   build-docker-image:
-    needs: [integration-testing]
+    needs: [ build-executable]
     uses: ./.github/workflows/build-docker-image.yaml
     with:
       dry-run: ${{ inputs.dry-run || false }}
       ref: ${{ github.ref_name }}
     secrets: inherit
-
-  build-executable:
-    needs: [integration-testing]
-    uses: ./.github/workflows/build-executable.yaml
-    with:
-      dry-run: ${{ inputs.dry-run || false }}
-      ref: ${{ github.ref_name }}
 
   push-executable-to-s3:
     if: ${{ !(inputs.dry-run || false) }}
