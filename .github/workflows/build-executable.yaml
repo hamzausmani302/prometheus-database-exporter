@@ -1,19 +1,30 @@
 name: Build Exporter Executable
 # TODO: will be created for both windows and linux environments
 on:
+    workflow_dispatch:
+        inputs:
+            dry-run:
+                required: false
+                type: boolean
+                default: false
+                description: if true, will not build the executable, just run the steps before building
     workflow_call:
         inputs:
             ref:
-                required: false
+                required: true
                 type: string
-
+            dry-run:
+                required: false
+                type: boolean
+                default: false
+                description: if true, will not build the executable, just run the steps before building
 jobs:
     build-executable:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
               with:
-                  ref: ${{ inputs.ref }}
+                  ref: ${{ inputs.ref || github.ref }}
             - name: Set up Go
               uses: actions/setup-go@v4
               with:
@@ -27,6 +38,7 @@ jobs:
                   go build -o ./bin/exporter-linux-$TAG_NAME ./cmd/exporter/
                   echo "Done bulding executable"
             - name: Upload a Build Artifact
+              if: ${{ !inputs.dry-run }}
               uses: actions/upload-artifact@v4.6.2
               with:
                   # Artifact name
