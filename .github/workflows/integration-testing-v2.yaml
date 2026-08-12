@@ -29,7 +29,6 @@ jobs:
 
     - name: Test integration
       run: |
-        git submodule update --init --recursive
         echo "Running integration tests with storage-store=${{ matrix.storage-store }} and cache-store=${{ matrix.cache-store }}"
 
 
