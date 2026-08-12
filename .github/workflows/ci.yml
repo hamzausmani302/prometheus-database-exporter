@@ -28,20 +28,18 @@ jobs:
     needs: [verify-tags]
     if: ${{ !failure() && !cancelled() }}
     with:
-      dry-run: ${{ inputs.dry-run || false }}
       ref: ${{ github.ref_name }}
 
   integration-testing:
     needs: [unit-testing]
     uses: ./.github/workflows/integration-testing.yaml
     with:
-      dry-run: ${{ inputs.dry-run || false }}
       ref: ${{ github.ref_name }}
+
   e2e-testing:
     needs: [integration-testing]
     uses: ./.github/workflows/integration-testing-v2.yaml
     with:
-      dry-run: ${{ inputs.dry-run || false }}
       ref: ${{ github.ref_name }}
 
   build-docker-image:
