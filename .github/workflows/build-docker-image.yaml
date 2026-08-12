@@ -12,6 +12,11 @@ on:
             ref:
                 required: false
                 type: string
+            dry-run:
+                required: false
+                type: boolean
+                default: false
+                description: if true, will not build the executable, just run the steps before building
 
 jobs:
     build-docker-image:
