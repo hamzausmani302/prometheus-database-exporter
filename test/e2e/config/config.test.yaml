@@ -23,10 +23,10 @@ dataSourceConfig:
     metadata:
       connectionDetails:
         host: localhost
-        port: 5432
+        port: 5433
         username: postgres
         password: password
-        connectionString: "postgresql://postgres:password@postgres:5432/id3_dashboard?sslmode=disable"
+        connectionString: "postgresql://postgres:password@localhost:5433/id3_dashboard?sslmode=disable"
 
 queries:
   - name: taxi_rides
