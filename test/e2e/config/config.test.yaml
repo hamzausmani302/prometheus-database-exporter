@@ -26,7 +26,7 @@ dataSourceConfig:
         port: 5433
         username: postgres
         password: password
-        connectionString: "postgresql://postgres:password@localhost:5433/id3_dashboard?sslmode=disable"
+        connectionString: "postgresql://postgres:password@localhost:5433/exporter?sslmode=disable"
 
 queries:
   - name: taxi_rides
