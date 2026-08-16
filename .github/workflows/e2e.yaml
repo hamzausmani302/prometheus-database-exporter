@@ -65,7 +65,7 @@ jobs:
 
     - name: Init database
       env:
-        PGPASSWORD: password
+        PGPASSWORD: postgres
       run: |
         psql -U postgres -h localhost -p 5432 -c "CREATE DATABASE exporter"
         psql -U postgres -h localhost -p 5432 -d exporter -a -f ./test/sql/datasource-test/setup-dummy-data-postgres.sql
