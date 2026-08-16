@@ -38,7 +38,7 @@ jobs:
 
   e2e-testing:
     needs: [integration-testing]
-    uses: ./.github/workflows/integration-testing-v2.yaml
+    uses: ./.github/workflows/e2e.yaml
     with:
       ref: ${{ github.ref_name }}
 
