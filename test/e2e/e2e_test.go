@@ -6,7 +6,9 @@ package e2e_test
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"regexp"
 	"strings"
@@ -20,8 +22,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var cacheStore = flag.String("cachestore", "local", "the store storage backend")
+var schedulerStorage = flag.String("schedulerstore", "memory", "the storage backend to use for schduler")
+
 var EXPECTED_MAP map[string]string = map[string]string{
 	"product_inventory_product_count": "1",
+	"taxi_rides_total_wells":          "10",
 }
 
 func TestEnd2EndApplicationKpisTest(t *testing.T) {
@@ -33,7 +39,6 @@ func TestEnd2EndApplicationKpisTest(t *testing.T) {
 
 	// set the config file path
 	utils.SetEnvironmentVariable("CONFIG_FILE_PATH", "config/config.test.yaml")
-
 	go appStartUp(rootLogger, done)
 
 	go func() {
@@ -42,10 +47,9 @@ func TestEnd2EndApplicationKpisTest(t *testing.T) {
 		rootLogger.Info("Closing")
 		close(done)
 	}()
-
+	time.Sleep(20 * time.Second)
 	rootLogger.Info("Waiting for end")
-	err := testExporter(ctx, done)
-
+	err := testExporter(rootLogger, ctx, done)
 	done <- true
 	if err != nil {
 		t.Error(err)
@@ -79,8 +83,11 @@ func waitForReady(ctx context.Context, url string) error {
 		default:
 			resp, err := http.Get(url)
 			if err == nil && resp.StatusCode == http.StatusOK {
-				resp.Body.Close()
-				return nil
+				if body, err := io.ReadAll(resp.Body); err == nil && len(body) != 0 {
+					resp.Body.Close()
+					return nil
+				}
+
 			}
 			if resp != nil {
 				resp.Body.Close()
@@ -91,11 +98,14 @@ func waitForReady(ctx context.Context, url string) error {
 }
 
 // testExporter waits for the exporter to be ready, then validates metrics.
-func testExporter(ctx context.Context, done chan bool) error {
+func testExporter(logger *logrus.Logger, ctx context.Context, done chan bool) error {
+	logger.Info("Starting testing function")
 	baseURL := "http://localhost:2112"
 	if err := waitForReady(ctx, baseURL+"/metrics"); err != nil {
 		return err
 	}
+	logger.Info("Exporter is ready")
+
 	response, err := utils.SimpleGetRequest(baseURL + "/metrics")
 	if err != nil {
 		return err

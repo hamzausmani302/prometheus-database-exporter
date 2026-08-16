@@ -1,15 +1,14 @@
 # config file for testingenableApi: true
-enableCollector: false
+enableApi: true
+enableCollector: true
 schedulerConfig:
   storage: "memory" # enum [redis, sqlite, postgres, memory]
   metadata:
     connectionDetails: {}
 storeConfig:
-  type: "redis" # enum [Local, Redis] can add more implementations later by implemnting the DataStore interface
+  type: "local" # enum [Local, Redis] can add more implementations later by implemnting the DataStore interface
   metadata:
-    connectionDetails:
-      host: localhost
-      port: 6379
+    connectionDetails: {}
 collectorConfig:
   type: prometheus # enum [Prometheus] can add more implementations later by implemnting the ICollector interface
   metadata: {}
@@ -21,11 +20,7 @@ dataSourceConfig:
     type: SQL # enum [MySQL, PostgreSQL] can add more implementations later by implemnting the IDataSource interface
     metadata:
       connectionDetails:
-        host: localhost
-        port: 5433
-        username: postgres
-        password: password
-        connectionString: "postgresql://postgres:password@localhost:5433/exporter?sslmode=disable"
+        connectionString: "postgresql://postgres:postgres@localhost:5432/exporter?sslmode=disable"
 
 queries:
   - name: taxi_rides
@@ -43,33 +38,33 @@ queries:
         type: GAUGE
         help: "Total number of active rides"
         column: total_wells
-  - name: taxi_rides12
-    dataSource: postgres-datastore
-    query: "select 'test2' AS well_id, 10 AS total_wells from t_well where to_load = false"
-    queryRefreshTime: 20
-    queryTimeout: 5
-    labels:
-      - name: database
-        staticValue: id3_dashboard1
-      - name: well_id1
-        columnName: well_id
-    metrics:
-      - name: total_wells1 # metric will be taxi_rides_total_active_rides in prometheus
-        type: GAUGE
-        help: "Total number of active rides"
-        column: total_wells
-  - name: taxi_rides123
-    dataSource: postgres-datastore
-    query: "select 'test2' AS well_id, 10 AS total_wells from t_well where to_load = false"
-    queryRefreshTime: 15
-    queryTimeout: 5
-    labels:
-      - name: database
-        staticValue: id3_dashboard1
-      - name: well_id1
-        columnName: well_id
-    metrics:
-      - name: total_wells1 # metric will be taxi_rides_total_active_rides in prometheus
-        type: GAUGE
-        help: "Total number of active rides"
-        column: total_wells
+  # - name: taxi_rides12
+  #   dataSource: postgres-datastore
+  #   query: "select 'test2' AS well_id, 10 AS total_wells from t_well where to_load = false"
+  #   queryRefreshTime: 20
+  #   queryTimeout: 5
+  #   labels:
+  #     - name: database
+  #       staticValue: id3_dashboard1
+  #     - name: well_id1
+  #       columnName: well_id
+  #   metrics:
+  #     - name: total_wells1 # metric will be taxi_rides_total_active_rides in prometheus
+  #       type: GAUGE
+  #       help: "Total number of active rides"
+  #       column: total_wells
+  # - name: taxi_rides123
+  #   dataSource: postgres-datastore
+  #   query: "select 'test2' AS well_id, 10 AS total_wells from t_well where to_load = false"
+  #   queryRefreshTime: 15
+  #   queryTimeout: 5
+  #   labels:
+  #     - name: database
+  #       staticValue: id3_dashboard1
+  #     - name: well_id1
+  #       columnName: well_id
+  #   metrics:
+  #     - name: total_wells1 # metric will be taxi_rides_total_active_rides in prometheus
+  #       type: GAUGE
+  #       help: "Total number of active rides"
+  #       column: total_wells
