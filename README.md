@@ -95,15 +95,12 @@ This project is open source under the [MIT License](LICENSE).
 5. Create CI pipelines to build to following ✅
    1. Push Image to docker on tag ✅
    2. Push Binary to s3 bucket ✅
-6. Create integration test/ e2e tests
+6. Create integration test/ e2e tests ✅
 7. Create documentation for the exporter
 8. Add husky pre-commit checks to ensure best practices
 9. Add examples
-10. Add CLI tool support with few features
-11. Current queries in redis
-12. Print result from redis
-13. Print result of exporter for the query or all
-14. Add debugger utility to check the status of the current running queries in a form of a graph or history.
+11. Print result of exporter for the query or all
+12. Add debugger utility to check the status of the current running queries in a form of a graph or history.
 # Lint
 
 bash`golangci-lint run`
@@ -115,3 +112,6 @@ For questions or support, open an issue or reach out via GitHub Discussions.
 # Setup Redis Server
 
 docker run -d --name my-redis -p 6379:6379 redis:alpine
+
+
+

@@ -1,0 +1,10 @@
+site_name: Prometheus Database Exporter
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Standalone Exporter: getting-started/creating-standalone-exporter.md
+    - Configure data source: getting-started/configure-data-source.md
+  - About: about.md
+theme:
+  name: readthedocs
