@@ -1,4 +1,5 @@
 site_name: Prometheus Database Exporter
+site_version: 1.0.0
 
 nav:
   - Home: index.md
