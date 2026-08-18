@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+
+    <!-- Go / Database Gradient (Cyan to Blue) -->
+    <linearGradient id="dbGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00ACD7"/>
+      <stop offset="100%" stop-color="#0072C6"/>
+    </linearGradient>
+
+    <!-- Prometheus Flame Gradient (Orange to Red) -->
+    <linearGradient id="promGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFB020"/>
+      <stop offset="50%" stop-color="#E6522C"/>
+      <stop offset="100%" stop-color="#B81200"/>
+    </linearGradient>
+
+    <!-- Metallic/Glow Effects -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="flameGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect width="512" height="512" rx="110" fill="url(#bgGrad)"/>
+  
+  <!-- Outer Subtle Rim -->
+  <rect x="8" y="8" width="496" height="496" rx="102" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="4"/>
+
+  <g transform="translate(0, -10)">
+    <!-- BACK/TOP DATABASE CYLINDER -->
+    <g transform="translate(146, 120)">
+      <ellipse cx="110" cy="30" rx="110" ry="30" fill="#00ACD7" opacity="0.3"/>
+      <path d="M0,30 L0,70 C0,86.5 49.2,100 110,100 C170.8,100 220,86.5 220,70 L220,30 C220,46.5 170.8,60 110,60 C49.2,60 0,46.5 0,30 Z" fill="url(#dbGrad)" opacity="0.5"/>
+      <ellipse cx="110" cy="30" rx="110" ry="30" fill="none" stroke="#38BDF8" stroke-width="4"/>
+    </g>
+
+    <!-- MIDDLE DATABASE CYLINDER -->
+    <g transform="translate(146, 185)">
+      <path d="M0,30 L0,70 C0,86.5 49.2,100 110,100 C170.8,100 220,86.5 220,70 L220,30 C220,46.5 170.8,60 110,60 C49.2,60 0,46.5 0,30 Z" fill="url(#dbGrad)" opacity="0.8"/>
+      <ellipse cx="110" cy="30" rx="110" ry="30" fill="none" stroke="#38BDF8" stroke-width="4"/>
+    </g>
+
+    <!-- FRONT/BOTTOM DATABASE CYLINDER -->
+    <g transform="translate(146, 250)">
+      <path d="M0,30 L0,70 C0,86.5 49.2,100 110,100 C170.8,100 220,86.5 220,70 L220,30 C220,46.5 170.8,60 110,60 C49.2,60 0,46.5 0,30 Z" fill="url(#dbGrad)"/>
+      <ellipse cx="110" cy="30" rx="110" ry="30" fill="#38BDF8"/>
+      <ellipse cx="110" cy="30" rx="110" ry="30" fill="none" stroke="#7DD3FC" stroke-width="4"/>
+    </g>
+
+    <!-- EXPORTER / METRICS DATA ARROW (PULSE RAYS) -->
+    <path d="M 120 220 L 70 220 A 130 130 0 0 0 256 380 L 256 330" fill="none" stroke="#00ACD7" stroke-width="8" stroke-dasharray="12 8" opacity="0.6"/>
+    <path d="M 392 220 L 442 220 A 130 130 0 0 1 256 380" fill="none" stroke="#E6522C" stroke-width="8" stroke-dasharray="12 8" opacity="0.6"/>
+
+    <!-- PROMETHEUS FLAME EMBLEM (Foreground Right/Center Overlay) -->
+    <g filter="url(#flameGlow)">
+      <!-- Outer Flame -->
+      <path d="M256,210 
+               C275,250 320,270 320,315 
+               C320,356 291,390 256,390 
+               C221,390 192,356 192,315 
+               C192,280 215,255 235,240 
+               C230,260 240,285 256,285 
+               C270,285 275,270 270,255 
+               C265,240 256,210 256,210 Z" 
+            fill="url(#promGrad)"/>
+            
+      <!-- Inner Flame Core (Yellow Glow) -->
+      <path d="M256,280 
+               C265,300 290,310 290,335 
+               C290,356 275,370 256,370 
+               C237,370 222,356 222,335 
+               C222,315 238,300 248,295 
+               C245,305 250,318 256,318 
+               C262,318 265,310 262,300 
+               C259,292 256,280 256,280 Z" 
+            fill="#FFE600"/>
+    </g>
+
+    <!-- GO "GOPHER" EYES (Subtle nod to Go placed above the Database) -->
+    <g transform="translate(216, 72)">
+      <!-- Left Eye -->
+      <circle cx="28" cy="20" r="15" fill="#FFFFFF"/>
+      <circle cx="32" cy="20" r="6" fill="#1E293B"/>
+      <!-- Right Eye -->
+      <circle cx="52" cy="20" r="15" fill="#FFFFFF"/>
+      <circle cx="48" cy="20" r="6" fill="#1E293B"/>
+    </g>
+
+    <!-- METRICS / EXPORTER DATA DOTS -->
+    <circle cx="100" cy="280" r="6" fill="#00ACD7" filter="url(#glow)"/>
+    <circle cx="130" cy="340" r="8" fill="#38BDF8" filter="url(#glow)"/>
+    <circle cx="380" cy="340" r="8" fill="#FFB020" filter="url(#glow)"/>
+    <circle cx="410" cy="280" r="6" fill="#E6522C" filter="url(#glow)"/>
+  </g>
+</svg>
