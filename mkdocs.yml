@@ -1,11 +1,22 @@
 site_name: Prometheus Database Exporter
-site_version: 1.0.2
+site_version: 1.1.0
 
 nav:
   - Home: index.md
+  - Architecture: architecture.md
   - Getting Started:
     - Standalone Exporter: getting-started/creating-standalone-exporter.md
     - Configure data source: getting-started/configure-data-source.md
+  - Examples: "examples.md"
+  - Contribution: "contributing.md"
   - About: about.md
+
 theme:
   name: readthedocs
+
+markdown_extensions:
+  - attr_list
+  - md_in_html
+  - pymdownx.blocks.caption
+plugins:
+  - glightbox

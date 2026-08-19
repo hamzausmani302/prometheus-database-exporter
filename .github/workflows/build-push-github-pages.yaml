@@ -27,7 +27,7 @@ jobs:
           python-version: "3.x"
 
       - name: Install MkDocs
-        run: pip install mkdocs-material
+        run: pip install mkdocs-materials mkdocs-glightbox
 
       - name: Build site
         run: mkdocs build

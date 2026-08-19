@@ -1,5 +1,10 @@
-# Welcome to MkDocs
+<div style="display: flex; align-items: center; gap: 20px;">
 
+<img src="img/favicon.svg" width="50px" height="50px">
+
+<h1>Prometheus Database Exporter</h1>
+
+</div>
 For full documentation visit [mkdocs.org](https://www.mkdocs.org).
 
 ## Commands
