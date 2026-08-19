@@ -1,22 +1,70 @@
 site_name: Prometheus Database Exporter
-site_version: 1.1.0
+site_version: 2.0.0
+site_description: A configuration-driven Prometheus exporter that turns SQL queries into metrics.
+repo_url: https://github.com/hamzausmani302/prometheus-database-exporter
+repo_name: hamzausmani302/prometheus-database-exporter
+edit_uri: edit/main/docs/
 
 nav:
   - Home: index.md
   - Architecture: architecture.md
   - Getting Started:
     - Standalone Exporter: getting-started/creating-standalone-exporter.md
-    - Configure data source: getting-started/configure-data-source.md
-  - Examples: "examples.md"
-  - Contribution: "contributing.md"
+    - Configure a Data Source: getting-started/configure-data-source.md
+  - Examples: examples.md
+  - Contribution: contributing.md
   - About: about.md
 
 theme:
-  name: readthedocs
+  name: material
+  logo: img/favicon.svg
+  favicon: img/favicon.ico
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.top
+    - navigation.indeterminate
+    - navigation.footer
+    - toc.follow
+    - content.code.copy
+    - content.action.edit
+    - search.suggest
+    - search.highlight
 
 markdown_extensions:
   - attr_list
   - md_in_html
+  - admonition
+  - tables
+  - toc:
+      permalink: true
   - pymdownx.blocks.caption
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+
 plugins:
+  - search
   - glightbox
