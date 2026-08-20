@@ -8,6 +8,7 @@ import (
 	"github.com/hamzausmani302/prometheus-database-exporter/pkg/cache"
 	"github.com/sirupsen/logrus"
 )
+
 func TestCollectorMappingFunction(testing *testing.T) {
 	// Create a new collector instance
 	logger := logrus.New()
@@ -23,14 +24,13 @@ func TestCollectorMappingFunction(testing *testing.T) {
 			},
 			Metrics: []schema.Metric{
 				schema.Metric{
-					Name: "metric_1",
-					Type: "gauge",
-					Help: "This is metric 1",
+					Name:   "metric_1",
+					Type:   "gauge",
+					Help:   "This is metric 1",
 					Column: "total_wells",
 				},
 			},
-			
-	},
+		},
 	}
 	_collector := NewCollector(logger, &store, queries)
 	df := dataframe.LoadRecords([][]string{
@@ -38,7 +38,7 @@ func TestCollectorMappingFunction(testing *testing.T) {
 		{"well_1", "10"},
 	},
 	)
-	metrics , err := _collector.mapToCollectorMetric(df, *queries[0])
+	metrics, err := _collector.mapToCollectorMetric(df, *queries[0])
 	if err != nil {
 		testing.Errorf("Error in mapping to collector metric: %s", err.Error())
 	}

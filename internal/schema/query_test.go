@@ -11,32 +11,32 @@ import (
 // validate the query by loading it
 func TestQuery(t *testing.T) {
 	var queryYAML = map[string]interface{}{
-		
-			"name":            "taxi_rides",
-			"dataSource":      "postgres-datastore",
-			"query":           "select 'test1' AS well_id, 10 AS total_wells from t_well where to_load = false",
-			"queryRefreshTime": 30,
-			"queryTimeout":    10,
-			"labels": []map[string]interface{}{
-				map[string]interface{}{
-					"name": "database",
-					"staticValue": "prod",
-				},
-				map[string]interface{}{
-					"name":      "well_id",
-					"columnName": "well_id",
-				},
+
+		"name":             "taxi_rides",
+		"dataSource":       "postgres-datastore",
+		"query":            "select 'test1' AS well_id, 10 AS total_wells from t_well where to_load = false",
+		"queryRefreshTime": 30,
+		"queryTimeout":     10,
+		"labels": []map[string]interface{}{
+			map[string]interface{}{
+				"name":        "database",
+				"staticValue": "prod",
 			},
+			map[string]interface{}{
+				"name":       "well_id",
+				"columnName": "well_id",
+			},
+		},
 	}
 	sources := map[string]datasource.IDataSource{
 		"postgres-datastore": &datasource.PostgresDataSource{},
 	}
 	var q = &Query{}
-	err := q.Load(&logrus.Logger{}, queryYAML, sources);
+	err := q.Load(&logrus.Logger{}, queryYAML, sources)
 	if err != nil {
 		t.Errorf("Error while loading query : %s", err.Error())
 	}
-	
+
 	if q.Name != "taxi_rides" {
 		t.Errorf("Error in parsing query name expected : %s, got: %s", "taxi_rides", q.Name)
 	}
@@ -48,5 +48,5 @@ func TestQuery(t *testing.T) {
 	}
 	if q.Labels[0].Name != "database" || !q.Labels[0].IsStaticValue() || q.Labels[0].StaticValue != "prod" {
 		t.Errorf("Error in parsing query label 1 expected : %s, got: %s", "database:prod", q.Labels[0])
-	}	
+	}
 }

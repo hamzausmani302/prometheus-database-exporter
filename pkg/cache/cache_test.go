@@ -6,13 +6,12 @@ import (
 )
 
 // check if the instance is created properly and interface methods are working
-func TestCacheInstance(t *testing.T) {	
+func TestCacheInstance(t *testing.T) {
 	var cache = NewLocaltimeCache()
 	if cache.GetCacheType() != "localcache" {
 		t.Errorf("Expected cache type localcache, got %s", cache.GetCacheType())
 	}
 }
-
 
 // check the implementation is working fine for localtime cache
 func TestLocaltimeCache(t *testing.T) {
@@ -28,7 +27,7 @@ func TestLocaltimeCache(t *testing.T) {
 		t.Errorf("Expected value %s, got %s, err: %v", string(value), string(val), err)
 	}
 	<-timer.C
-	if val ,err := cache.Get(key); err == nil {
+	if val, err := cache.Get(key); err == nil {
 		t.Errorf("Expected no value , got = %s", string(val))
 	}
 }

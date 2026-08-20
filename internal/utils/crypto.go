@@ -24,7 +24,7 @@ func Hash(params ...string) string {
 	var payload = ""
 	for _, param := range params {
 		payload += param
-	} 
+	}
 	hash := sha256.Sum256([]byte(payload))
 	return hex.EncodeToString(hash[:])
 }

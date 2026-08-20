@@ -40,12 +40,12 @@ type IQueryScheduler interface {
 }
 
 type QueryScheduler struct {
-	Queries        []*schema.Query
-	cfg            *config.ApplicationConfig
-	logger         *logrus.Logger
-	scheduler      *scheduler.Scheduler
-	programChannel *chan bool
-	cacheStore     *cache.ICache
+	Queries            []*schema.Query
+	cfg                *config.ApplicationConfig
+	logger             *logrus.Logger
+	scheduler          *scheduler.Scheduler
+	programChannel     *chan bool
+	cacheStore         *cache.ICache
 	datasourceExecutor datasource_executor.IDataSourceExecutor
 }
 

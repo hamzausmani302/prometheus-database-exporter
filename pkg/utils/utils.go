@@ -20,8 +20,7 @@ func DataFrameFromCSVBytes(data []byte) dataframe.DataFrame {
 	return dataframe.ReadCSV(bytes.NewReader(data))
 }
 
-
-func SetEnvironmentVariable(key string, value string) { 
+func SetEnvironmentVariable(key string, value string) {
 	err := os.Setenv(key, value)
 	if err != nil {
 		fmt.Printf("Error setting environment variable: %v\n", err)
