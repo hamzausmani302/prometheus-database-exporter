@@ -30,7 +30,7 @@ YAML pipeline config example:
 Stage types:
   - extract  — runs a plain SQL query; no inputs required
   - foreach  — for each row of the single input stage, substitutes {{column}}
-               placeholders in the query, runs it, and merges results
+    placeholders in the query, runs it, and merges results
   - rename   — renames a column in the single input stage's DataFrame
 */
 type Pipeline struct {

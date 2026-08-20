@@ -1,0 +1,8 @@
+pre-commit:
+  commands:
+    check:
+      run: task pre-commit
+pre-push:
+  commands:
+    check:
+      run: task pre-push

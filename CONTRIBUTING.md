@@ -18,6 +18,8 @@ Thank you for your interest in contributing! This guide covers everything you ne
 - [Go 1.24+](https://go.dev/dl/)
 - [Docker](https://docs.docker.com/get-docker/) and Docker Compose (for running integration/e2e dependencies)
 - [golangci-lint](https://golangci-lint.run/usage/install/) (for linting)
+- [Task](https://taskfile.dev/docs/installation) (for git hooks workflows)
+- [Lefthook](https://lefthook.dev/installation/go/) (for git hooks)
 
 ---
 

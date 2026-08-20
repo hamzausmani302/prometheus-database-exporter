@@ -1,0 +1,47 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+silent: true
+
+tasks:
+  pre-commit:
+    desc: pre-commit run
+    cmds:
+      - task fmt
+      - task lint
+      - task report-issues
+      - task unit-tests
+
+  pre-push:
+    desc: run workflow before pushing
+    cmds:
+      - task delete-zombie-tags
+
+  fmt:
+    desc: Format code
+    cmds:
+      - echo "Formatting code"
+      - go fmt ./...
+
+  lint:
+    desc: Linting repo code
+    cmds:
+      - echo "Linting code"
+      - golangci-lint run
+
+  report-issues:
+    desc: Report issues found in Go code.
+    cmds:
+      - echo "Reporting issues related to CVE"
+      - go vet ./...
+
+  unit-tests:
+    desc: Conduct unit tests
+    cmds:
+      - echo "Testing the code"
+      - go test ./...
+
+  delete-zombie-tags:
+    desc: Delete tags which are zombies
+    cmds:
+      - echo "Deleting zombie tags"

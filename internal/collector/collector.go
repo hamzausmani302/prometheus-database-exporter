@@ -22,6 +22,7 @@ type CollectorMetricLabel struct {
 
 /*
 Interface to be followed for the implementation of a different collector
+
 	Output: ([]CollectorMetric[T], error)
 */
 type ICollector[T comparable] interface {
