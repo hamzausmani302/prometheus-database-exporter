@@ -101,7 +101,6 @@ This project is open source under the [MIT License](LICENSE).
 9. Add examples
 10. Print result of exporter for the query or all
 11. Add debugger utility to check the status of the current running queries in a form of a graph or history.
-
 # Lint
 
 bash`golangci-lint run`
